@@ -641,7 +641,7 @@ const appState = {
   installPromptEvent: null,
   isInstalled: isAppInstalled()
 };
-const AI_INTERPRET_ENDPOINT = "/api/divination/interpret";
+const DEFAULT_AI_INTERPRET_ENDPOINT = "/api/divination/interpret";
 const AI_ENABLED_MODES = new Set(["tarot", "oracle", "archetype"]);
 
 initialize();
@@ -1154,7 +1154,7 @@ async function startAiInterpretationFlow() {
       question,
       status: "error",
       interpretation: "",
-      error: "The AI reading could not be completed right now, but the original divination is ready below."
+      error: getAiFallbackMessage(error)
     };
   }
 
@@ -2232,7 +2232,7 @@ function getQuestionStepCopy(mode, selection) {
 
 async function requestAiInterpretation(reading) {
   const payload = buildAiInterpretationPayload(reading);
-  const response = await fetch(AI_INTERPRET_ENDPOINT, {
+  const response = await fetch(getAiInterpretEndpoint(), {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
@@ -2240,11 +2240,24 @@ async function requestAiInterpretation(reading) {
     body: JSON.stringify(payload)
   });
 
-  if (!response.ok) {
-    throw new Error(`AI request failed with status ${response.status}`);
+  let data = null;
+
+  try {
+    data = await response.json();
+  } catch (error) {
+    data = null;
   }
 
-  const data = await response.json();
+  if (!response.ok) {
+    const error = new Error(
+      typeof data?.error === "string" && data.error.trim()
+        ? data.error.trim()
+        : `AI request failed with status ${response.status}`
+    );
+    error.status = response.status;
+    throw error;
+  }
+
   const interpretation = typeof data?.interpretation === "string" ? data.interpretation.trim() : "";
 
   if (!interpretation) {
@@ -2252,6 +2265,32 @@ async function requestAiInterpretation(reading) {
   }
 
   return interpretation;
+}
+
+function getAiInterpretEndpoint() {
+  const configuredEndpoint = window.DIVINE_CHAMBER_CONFIG?.aiInterpretEndpoint;
+
+  if (typeof configuredEndpoint === "string" && configuredEndpoint.trim()) {
+    return configuredEndpoint.trim();
+  }
+
+  return DEFAULT_AI_INTERPRET_ENDPOINT;
+}
+
+function getAiFallbackMessage(error) {
+  const message = String(error?.message || "");
+  const status = Number(error?.status || 0);
+
+  if (
+    status === 404 ||
+    status === 503 ||
+    /not configured/i.test(message) ||
+    /workers ai/i.test(message)
+  ) {
+    return "The personalised reading is not connected yet, but the original divination is ready below.";
+  }
+
+  return "The personalised reading could not be completed right now, but the original divination is ready below.";
 }
 
 function buildAiInterpretationPayload(reading) {

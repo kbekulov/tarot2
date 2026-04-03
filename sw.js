@@ -1,10 +1,11 @@
-const CACHE_NAME = "divine-chamber-v2";
+const CACHE_NAME = "divine-chamber-v3";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./iphone.html",
   "./styles.css",
   "./app.js",
+  "./site-config.js",
   "./tarot-art.js",
   "./oracle-phrases.js",
   "./archetype-mirror-data.js",
@@ -47,6 +48,13 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
 
   if (url.origin !== self.location.origin) {
+    return;
+  }
+
+  if (url.pathname.endsWith("/site-config.js")) {
+    event.respondWith(
+      fetch(request).catch(() => caches.match(request))
+    );
     return;
   }
 

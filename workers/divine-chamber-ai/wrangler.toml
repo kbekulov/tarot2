@@ -1,0 +1,13 @@
+name = "divine-chamber-ai"
+main = "src/index.js"
+compatibility_date = "2026-04-03"
+workers_dev = true
+
+[ai]
+binding = "AI"
+
+# Optional:
+# add this in the Cloudflare dashboard or via Wrangler if you want to lock the
+# API down to your site instead of allowing every origin.
+# [vars]
+# ALLOWED_ORIGIN = "https://tarot.bekulov.com"
