@@ -632,6 +632,7 @@ const appState = {
   currentView: "setup",
   currentStage: "mode",
   currentReading: null,
+  aiRequestToken: 0,
   artworkDeck: null,
   artworkSeed: "",
   focusCountdown: 10,
@@ -953,6 +954,7 @@ function startModeFlow(mode) {
   appState.selectedSpreadId = mode === "dice" ? diceCatalog[0]?.id || null : null;
   appState.currentStage = mode === "dice" ? "result" : "spreads";
   appState.currentReading = null;
+  appState.aiRequestToken += 1;
   appState.readingScrollUnlocked = false;
   appState.pendingQuestion = "";
   renderModeSwitch();
@@ -1012,6 +1014,7 @@ function renderSpreadPicker() {
 function selectSpread(spreadId) {
   appState.selectedSpreadId = spreadId;
   appState.currentReading = null;
+  appState.aiRequestToken += 1;
   appState.pendingQuestion = "";
 
   if (shouldOfferAiStep()) {
@@ -1123,45 +1126,99 @@ function revealPreparedReading() {
   setReadingScrollUnlocked(false);
 }
 
-async function startAiInterpretationFlow() {
+function beginAiInterpretationRequest() {
+  const question = appState.pendingQuestion.trim();
+
+  if (!appState.currentReading || !question) {
+    return;
+  }
+
+  if (appState.currentReading.ai?.status === "loading" || appState.currentReading.ai?.status === "success") {
+    return;
+  }
+
+  const requestToken = appState.aiRequestToken + 1;
+  appState.aiRequestToken = requestToken;
+  const reading = appState.currentReading;
+
+  reading.ai = {
+    question,
+    status: "loading",
+    interpretation: "",
+    error: "",
+    startedAt: Date.now()
+  };
+
+  requestAiInterpretation(reading)
+    .then((interpretation) => {
+      if (requestToken !== appState.aiRequestToken || appState.currentReading !== reading) {
+        return;
+      }
+
+      reading.ai = {
+        question,
+        status: "success",
+        interpretation,
+        error: "",
+        startedAt: reading.ai?.startedAt || Date.now()
+      };
+    })
+    .catch((error) => {
+      if (requestToken !== appState.aiRequestToken || appState.currentReading !== reading) {
+        return;
+      }
+
+      reading.ai = {
+        question,
+        status: "error",
+        interpretation: "",
+        error: getAiFallbackMessage(error),
+        startedAt: reading.ai?.startedAt || Date.now()
+      };
+    })
+    .finally(() => {
+      if (requestToken !== appState.aiRequestToken || appState.currentReading !== reading) {
+        return;
+      }
+
+      if (appState.currentView === "reading") {
+        revealPreparedReading();
+      }
+    });
+}
+
+function ensureReadingCreated() {
+  if (
+    appState.currentReading &&
+    appState.currentReading.mode === appState.currentMode &&
+    appState.currentReading.configId === appState.selectedSpreadId
+  ) {
+    return true;
+  }
+
+  return createReading();
+}
+
+function startAiInterpretationFlow() {
   if (!appState.currentReading) {
     return;
   }
 
-  const question = appState.pendingQuestion.trim();
+  if (appState.currentReading.ai?.status === "idle" && appState.pendingQuestion.trim()) {
+    beginAiInterpretationRequest();
+  }
 
-  appState.currentReading.ai = {
-    question,
-    status: "loading",
-    interpretation: "",
-    error: ""
-  };
+  if (appState.currentReading.ai?.status !== "loading") {
+    revealPreparedReading();
+    return;
+  }
 
   renderReadingView();
   showView("reading");
   setReadingScrollUnlocked(false);
-
-  try {
-    const interpretation = await requestAiInterpretation(appState.currentReading);
-    appState.currentReading.ai = {
-      question,
-      status: "success",
-      interpretation,
-      error: ""
-    };
-  } catch (error) {
-    appState.currentReading.ai = {
-      question,
-      status: "error",
-      interpretation: "",
-      error: getAiFallbackMessage(error)
-    };
-  }
-
-  revealPreparedReading();
 }
 
-async function submitAiQuestion() {
+function submitAiQuestion() {
   const question = (elements.aiQuestionInput?.value || "").trim();
 
   if (!question) {
@@ -1172,10 +1229,16 @@ async function submitAiQuestion() {
   appState.pendingQuestion = question;
   setQuestionStatus("");
   syncQuestionControls();
+
+  if (ensureReadingCreated()) {
+    beginAiInterpretationRequest();
+  }
+
   continueAfterQuestionGate();
 }
 
 function skipAiQuestion() {
+  appState.aiRequestToken += 1;
   appState.pendingQuestion = "";
   setQuestionStatus("");
   syncQuestionControls();
@@ -1187,6 +1250,16 @@ function clearFocusCountdown() {
     window.clearInterval(appState.focusTimerId);
     appState.focusTimerId = null;
   }
+}
+
+function getAiLoadingProgress(reading) {
+  const startedAt = Number(reading?.ai?.startedAt || 0);
+
+  if (!startedAt) {
+    return 0;
+  }
+
+  return Math.min(180, Math.max(0, (Date.now() - startedAt) / 1000));
 }
 
 function renderSetupStage() {
@@ -1354,7 +1427,7 @@ function updateFocusCountdown() {
 }
 
 function revealReading() {
-  if (!createReading()) {
+  if (!ensureReadingCreated()) {
     return;
   }
 
@@ -1368,7 +1441,8 @@ function revealReading() {
       question: "",
       status: "skipped",
       interpretation: "",
-      error: ""
+      error: "",
+      startedAt: 0
     };
   }
 
@@ -1402,7 +1476,8 @@ function createReading() {
         question: "",
         status: "idle",
         interpretation: "",
-        error: ""
+        error: "",
+        startedAt: 0
       }
     };
     return true;
@@ -1422,7 +1497,8 @@ function createReading() {
         question: "",
         status: "idle",
         interpretation: "",
-        error: ""
+        error: "",
+        startedAt: 0
       }
     };
     return true;
@@ -1442,7 +1518,8 @@ function createReading() {
       question: "",
       status: "idle",
       interpretation: "",
-      error: ""
+      error: "",
+      startedAt: 0
     }
   };
 
@@ -1457,6 +1534,7 @@ function redrawReading() {
 
   if (shouldOfferAiStep()) {
     appState.currentReading = null;
+    appState.aiRequestToken += 1;
     appState.pendingQuestion = "";
     openQuestionGate();
     return;
@@ -1779,6 +1857,7 @@ function renderReadingBoard(config, draws, mode) {
 }
 
 function renderAiLoadingBoard(reading) {
+  const elapsedSeconds = getAiLoadingProgress(reading);
   const noun =
     reading.mode === "oracle"
       ? "pages"
@@ -1787,13 +1866,19 @@ function renderAiLoadingBoard(reading) {
         : "cards";
 
   return `
-    <div class="ai-loading-board" aria-live="polite">
+    <div class="ai-loading-board" aria-live="polite" style="--ai-loading-elapsed: ${elapsedSeconds};">
       <div class="ai-loading-board__pulse" aria-hidden="true"></div>
       <div class="ai-loading-board__copy">
         <div class="view-kicker">Personalised interpretation</div>
         <h2 class="surface-title">Reading the ${noun}</h2>
         <p class="reading-sheet__summary mb-0">
           Your divination is already generated. Divine Chamber is now writing the answer to your question.
+        </p>
+        <div class="ai-loading-board__progress" aria-hidden="true">
+          <span class="ai-loading-board__progress-fill"></span>
+        </div>
+        <p class="ai-loading-board__note mb-0">
+          This may take up to 3 minutes.
         </p>
       </div>
     </div>
@@ -2845,6 +2930,7 @@ function resetExperience() {
   appState.selectedSpreadId = null;
   appState.currentStage = "mode";
   appState.currentReading = null;
+  appState.aiRequestToken += 1;
   appState.readingScrollUnlocked = false;
   appState.pendingQuestion = "";
   clearReadingSurface();
