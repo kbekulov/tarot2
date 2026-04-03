@@ -1583,6 +1583,68 @@ body::after {
   gap: 0.55rem;
 }
 
+.question-gate__actions .btn-ios {
+  min-height: 3rem;
+}
+
+.question-gate__actions .btn-ios--ghost {
+  background: rgba(255, 255, 255, 0.82);
+  border-color: rgba(22, 34, 54, 0.08);
+  color: var(--text-soft);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92);
+}
+
+.question-gate__actions .btn-ios--secondary {
+  background: linear-gradient(180deg, rgba(226, 239, 252, 0.94), rgba(212, 231, 249, 0.92));
+  border-color: rgba(10, 132, 255, 0.1);
+  color: var(--accent-strong);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.94),
+    0 10px 18px rgba(10, 132, 255, 0.08);
+}
+
+.question-gate__actions .btn-ios--secondary:disabled {
+  background: linear-gradient(180deg, rgba(241, 246, 251, 0.9), rgba(233, 240, 247, 0.9));
+  border-color: rgba(22, 34, 54, 0.04);
+  color: rgba(111, 129, 151, 0.58);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92);
+  transform: none;
+}
+
+.question-gate__actions .btn-ios--secondary:not(:disabled):hover,
+.question-gate__actions .btn-ios--secondary:not(:disabled):focus {
+  background: linear-gradient(180deg, rgba(222, 237, 252, 0.98), rgba(205, 227, 248, 0.96));
+  border-color: rgba(10, 132, 255, 0.14);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.96),
+    0 12px 20px rgba(10, 132, 255, 0.1);
+}
+
+.app-shell[data-mode="archetype"] .question-gate__actions .btn-ios--secondary {
+  background: linear-gradient(180deg, rgba(228, 235, 242, 0.96), rgba(215, 226, 236, 0.94));
+  border-color: rgba(91, 113, 133, 0.12);
+  color: #5b7185;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.94),
+    0 10px 18px rgba(91, 113, 133, 0.08);
+}
+
+.app-shell[data-mode="archetype"] .question-gate__actions .btn-ios--secondary:disabled {
+  background: linear-gradient(180deg, rgba(240, 244, 247, 0.92), rgba(231, 237, 242, 0.9));
+  border-color: rgba(91, 113, 133, 0.05);
+  color: rgba(91, 113, 133, 0.5);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92);
+}
+
+.app-shell[data-mode="archetype"] .question-gate__actions .btn-ios--secondary:not(:disabled):hover,
+.app-shell[data-mode="archetype"] .question-gate__actions .btn-ios--secondary:not(:disabled):focus {
+  background: linear-gradient(180deg, rgba(223, 232, 240, 0.98), rgba(208, 221, 233, 0.96));
+  border-color: rgba(91, 113, 133, 0.16);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 12px 20px rgba(91, 113, 133, 0.1);
+}
+
 .question-gate__status {
   display: flex;
   align-items: center;
