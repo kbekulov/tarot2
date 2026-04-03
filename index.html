@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#eef4fb" />
+    <meta name="application-name" content="Divine Chamber" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Divine Chamber" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <title>Divine Chamber | Tarot, Oracle, Archetype Mirror, and Dice</title>
+    <meta
+      name="description"
+      content="Choose tarot, oracle, archetype mirror, or dice, then reveal a guided experience inside a simple app-style interface."
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+      rel="stylesheet"
+    />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="img/apple-touch-icon.png" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell app-shell--browser">
+      <div class="container app-shell__container app-shell__container--browser">
+        <div class="app-frame app-frame--browser">
+          <div class="app-ambient-waves" aria-hidden="true">
+            <span class="app-ambient-waves__band app-ambient-waves__band--upper"></span>
+            <span class="app-ambient-waves__band app-ambient-waves__band--lower"></span>
+          </div>
+          <main class="app-main app-main--browser">
+            <div class="app-main__inner">
+              <div class="app-topbar">
+                <a class="brand-mark text-decoration-none" href="#">
+                  <span class="brand-mark__icon" aria-hidden="true"><span class="brand-mark__logo"></span></span>
+                  <span class="brand-mark__label">Divine Chamber</span>
+                </a>
+                <div class="mode-switch" role="group" aria-label="Reading mode">
+                  <button
+                    type="button"
+                    class="mode-switch__option is-active"
+                    data-app-mode="tarot"
+                    aria-pressed="true"
+                  >
+                    <i class="bi bi-stars"></i>
+                    <span>Tarot</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="mode-switch__option"
+                    data-app-mode="oracle"
+                    aria-pressed="false"
+                  >
+                    <i class="bi bi-journal-bookmark"></i>
+                    <span>Oracle</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="mode-switch__option"
+                    data-app-mode="archetype"
+                    aria-pressed="false"
+                  >
+                    <i class="bi bi-eye"></i>
+                    <span>Mirror</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="mode-switch__option"
+                    data-app-mode="dice"
+                    aria-pressed="false"
+                  >
+                    <i class="bi bi-dice-5"></i>
+                    <span>Dice</span>
+                  </button>
+                </div>
+              </div>
+
+              <section id="setupView" class="experience-screen">
+                <div class="setup-stage">
+                  <div class="setup-stage__card-zone">
+                    <div id="modeChoiceGrid" class="mode-choice-grid" hidden>
+                      <div class="mode-choice-logo" aria-hidden="true">
+                        <span class="mode-choice-logo__halo"></span>
+                        <span class="mode-choice-logo__mark"></span>
+                      </div>
+
+                      <button
+                        type="button"
+                        class="mode-choice"
+                        data-select-mode="tarot"
+                        aria-label="Choose Tarot mode"
+                      >
+                        <span class="mode-choice__artifact mode-choice__artifact--tarot" aria-hidden="true">
+                          <span class="mode-choice__glyph"><i class="bi bi-stars"></i></span>
+                        </span>
+                        <span class="mode-choice__title">Tarot</span>
+                        <span class="mode-choice__text">Symbolic spreads with layered card positions.</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        class="mode-choice"
+                        data-select-mode="oracle"
+                        aria-label="Choose Oracle mode"
+                      >
+                        <span class="mode-choice__artifact mode-choice__artifact--oracle" aria-hidden="true">
+                          <span class="mode-choice__glyph"><i class="bi bi-journal-bookmark-fill"></i></span>
+                        </span>
+                        <span class="mode-choice__title">Oracle</span>
+                        <span class="mode-choice__text">Page-style messages for quick clarity.</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        class="mode-choice"
+                        data-select-mode="archetype"
+                        aria-label="Choose Archetype Mirror mode"
+                      >
+                        <span class="mode-choice__artifact mode-choice__artifact--archetype" aria-hidden="true">
+                          <span class="mode-choice__glyph"><i class="bi bi-eye-fill"></i></span>
+                        </span>
+                        <span class="mode-choice__title">Archetype Mirror</span>
+                        <span class="mode-choice__text">Psychological spreads for patterns and integration.</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        class="mode-choice"
+                        data-select-mode="dice"
+                        aria-label="Choose Dice Cast mode"
+                      >
+                        <span class="mode-choice__artifact mode-choice__artifact--dice" aria-hidden="true">
+                          <span class="mode-choice__die mode-choice__die--one"></span>
+                          <span class="mode-choice__die mode-choice__die--two"></span>
+                        </span>
+                        <span class="mode-choice__title">Dice Cast</span>
+                        <span class="mode-choice__text">Two dice for a direct total and yes, maybe, or no.</span>
+                      </button>
+                    </div>
+
+                    <div class="setup-stage__halo"></div>
+                    <div id="mysteryCardButton" class="mystery-card" aria-hidden="true">
+                      <span class="mystery-card__inner">
+                        <span class="mystery-card__crest"><i class="bi bi-stars"></i></span>
+                        <span class="mystery-card__name">The deck is hidden</span>
+                        <span class="mystery-card__prompt">Tap to begin</span>
+                      </span>
+                    </div>
+                    <button id="installAppButton" class="install-app-cta" type="button" hidden>
+                      <i class="bi bi-arrow-down-circle" aria-hidden="true"></i>
+                      <span>Download the App</span>
+                    </button>
+                  </div>
+
+                  <div class="stage-panel">
+                    <div id="setupStepLabel" class="stage-step">Step 1</div>
+                    <h1 id="setupTitle" class="stage-title">Choose your lens.</h1>
+                    <p id="setupBody" class="stage-body">
+                      Tarot reads symbols. Oracle offers concise page-like guidance. Archetype Mirror
+                      reflects inner patterns and integration.
+                    </p>
+
+                    <div id="spreadChoicePanel" class="stage-section" hidden>
+                      <div id="choiceSectionLabel" class="stage-section__label">Choose the reading type</div>
+                      <div id="spreadPicker" class="spread-list"></div>
+                    </div>
+
+                    <div id="focusPanel" class="stage-section" hidden>
+                      <div class="focus-timer">
+                        <div id="focusRing" class="focus-timer__ring">
+                          <span id="focusTimerValue" class="focus-timer__value">10</span>
+                        </div>
+                        <div class="focus-timer__copy">
+                          <div class="stage-section__label">Hold the question in your mind</div>
+                          <h2 id="focusSpreadName" class="focus-timer__title"></h2>
+                          <p id="focusCountdownText" class="focus-timer__body mb-0">
+                            Ten seconds of quiet focus before the spread reveals itself.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div id="actionPanel" class="stage-section" hidden>
+                      <div class="reflection-intro">
+                        <div class="reflection-intro__copy">
+                          <div class="stage-section__label">Archetype Mirror</div>
+                          <h2 id="actionSpreadName" class="focus-timer__title"></h2>
+                          <p id="actionSpreadBody" class="focus-timer__body mb-0"></p>
+                        </div>
+                        <button
+                          id="generateMirrorButton"
+                          class="btn btn-ios btn-ios--secondary"
+                          type="button"
+                        >
+                          Generate the mirror
+                        </button>
+                      </div>
+                    </div>
+
+                    <p id="setupFootnote" class="stage-footnote mb-0">Choose one to begin.</p>
+                  </div>
+                </div>
+              </section>
+
+              <section id="readingView" class="experience-screen" hidden>
+                <div class="reading-stage">
+                  <div class="reading-stage__top">
+                    <div>
+                      <div class="view-kicker">Reading revealed</div>
+                      <h1 id="readingTitle" class="view-title"></h1>
+                    </div>
+                    <div class="reading-stage__top-actions">
+                      <button
+                        id="redrawTopButton"
+                        class="icon-button"
+                        type="button"
+                        aria-label="Open a new oracle reading"
+                        hidden
+                      >
+                        <i class="bi bi-arrow-repeat"></i>
+                      </button>
+                      <button
+                        id="resetButton"
+                        class="icon-button"
+                        type="button"
+                        aria-label="Start a new ritual"
+                      >
+                        <i class="bi bi-x-lg"></i>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="reading-stage__board">
+                    <div id="readingBoard" class="reading-board"></div>
+                  </div>
+
+                  <div id="readingSheet" class="reading-sheet">
+                    <button
+                      id="sheetToggle"
+                      class="reading-sheet__handle"
+                      type="button"
+                      aria-expanded="false"
+                    >
+                      <span class="reading-sheet__grabber"></span>
+                      <span id="sheetToggleLabel">Read below</span>
+                      <i class="bi bi-chevron-down"></i>
+                    </button>
+
+                    <div class="reading-sheet__inner">
+                      <div class="reading-sheet__header">
+                        <div>
+                          <div id="readingSurfaceKicker" class="surface-kicker">Interpretation</div>
+                          <h2 id="readingHeadline" class="surface-title"></h2>
+                          <p id="readingSummary" class="reading-sheet__summary mb-0"></p>
+                          <p id="readingGuideText" class="reading-sheet__guide mb-0"></p>
+                        </div>
+                        <span id="readingMeta" class="rail-chip"></span>
+                      </div>
+
+                      <div class="reading-sheet__actions">
+                        <button id="redrawButton" class="btn btn-ios btn-ios--secondary" type="button">
+                          Draw again
+                        </button>
+                        <button id="backButton" class="btn btn-ios btn-ios--ghost" type="button">
+                          New ritual
+                        </button>
+                      </div>
+
+                      <div id="cardsAccordion" class="accordion reading-accordion"></div>
+
+                      <div id="readingTakeaways" class="takeaways-card"></div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </main>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="modal fade install-modal"
+      id="installModal"
+      tabindex="-1"
+      aria-labelledby="installModalTitle"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content install-modal__content">
+          <div class="modal-body install-modal__body">
+            <div class="install-modal__kicker">Download the App</div>
+            <h2 id="installModalTitle" class="install-modal__title">Add Divine Chamber</h2>
+            <p id="installModalBody" class="install-modal__text mb-0"></p>
+            <ol id="installModalSteps" class="install-modal__steps mb-0"></ol>
+            <div class="install-modal__actions">
+              <button type="button" class="btn btn-ios btn-ios--secondary" data-bs-dismiss="modal">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="vendor/browser-sibyl.js" defer></script>
+    <script src="tarot-art.js" defer></script>
+    <script src="oracle-phrases.js" defer></script>
+    <script src="archetype-mirror-data.js" defer></script>
+    <script src="app.js" defer></script>
+  </body>
+</html>
