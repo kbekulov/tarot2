@@ -1,9 +1,7 @@
 window.DIVINE_CHAMBER_CONFIG = Object.assign(
   {
-    // Set this to your deployed Cloudflare Worker URL once it exists.
-    // Example:
-    // aiInterpretEndpoint: "https://divine-chamber-ai.<your-subdomain>.workers.dev/api/divination/interpret"
-    aiInterpretEndpoint: ""
+    aiInterpretEndpoint:
+      "https://divine-chamber-ai.kiril-950.workers.dev/api/divination/interpret"
   },
   window.DIVINE_CHAMBER_CONFIG || {}
 );
