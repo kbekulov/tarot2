@@ -2088,6 +2088,90 @@ body::after {
   --card-height: calc(var(--card-width) * 1.6685);
 }
 
+.reading-board--ai-loading {
+  min-height: clamp(18rem, 48vh, 24rem);
+  align-content: center;
+}
+
+.ai-loading-board {
+  width: min(100%, 18rem);
+  display: grid;
+  justify-items: center;
+  gap: 1rem;
+  padding: 1.4rem 1.2rem;
+  border-radius: 1.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(241, 247, 253, 0.92));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.94),
+    var(--shadow-md);
+  text-align: center;
+}
+
+.reading-stage--oracle .ai-loading-board {
+  background:
+    linear-gradient(180deg, rgba(254, 250, 244, 0.96), rgba(248, 240, 232, 0.94));
+}
+
+.reading-stage--archetype .ai-loading-board {
+  background:
+    linear-gradient(180deg, rgba(248, 251, 254, 0.96), rgba(239, 246, 251, 0.92));
+}
+
+.ai-loading-board__pulse {
+  width: 4.4rem;
+  height: 4.4rem;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(10, 132, 255, 0.2), rgba(10, 132, 255, 0.04) 58%, transparent 70%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 0 0 12px rgba(10, 132, 255, 0.05);
+  position: relative;
+}
+
+.ai-loading-board__pulse::after {
+  content: "";
+  position: absolute;
+  inset: 1.05rem;
+  border-radius: 50%;
+  border: 3px solid rgba(10, 132, 255, 0.18);
+  border-top-color: rgba(10, 132, 255, 0.78);
+  animation: question-gate-spin 840ms linear infinite;
+}
+
+.reading-stage--oracle .ai-loading-board__pulse {
+  background:
+    radial-gradient(circle at 50% 50%, rgba(159, 101, 52, 0.18), rgba(159, 101, 52, 0.04) 58%, transparent 70%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 0 0 12px rgba(159, 101, 52, 0.05);
+}
+
+.reading-stage--oracle .ai-loading-board__pulse::after {
+  border-color: rgba(159, 101, 52, 0.18);
+  border-top-color: rgba(159, 101, 52, 0.76);
+}
+
+.reading-stage--archetype .ai-loading-board__pulse {
+  background:
+    radial-gradient(circle at 50% 50%, rgba(91, 113, 133, 0.18), rgba(91, 113, 133, 0.04) 58%, transparent 70%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 0 0 12px rgba(91, 113, 133, 0.05);
+}
+
+.reading-stage--archetype .ai-loading-board__pulse::after {
+  border-color: rgba(91, 113, 133, 0.18);
+  border-top-color: rgba(91, 113, 133, 0.74);
+}
+
+.ai-loading-board__copy {
+  display: grid;
+  gap: 0.38rem;
+}
+
 .reading-board.spread-layout-single {
   --card-width: 168px;
   grid-template-columns: 1fr;

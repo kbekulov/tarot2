@@ -1014,18 +1014,27 @@ function selectSpread(spreadId) {
   appState.currentReading = null;
   appState.pendingQuestion = "";
 
-  if (appState.currentMode === "archetype") {
-    prepareArchetypeReflection();
+  if (shouldOfferAiStep()) {
+    openQuestionGate();
     return;
   }
 
-  startFocusCountdown();
+  continueAfterQuestionGate();
 }
 
 function prepareArchetypeReflection() {
   clearFocusCountdown();
   appState.currentStage = "action";
   renderSetupStage();
+}
+
+function continueAfterQuestionGate() {
+  if (appState.currentMode === "archetype") {
+    prepareArchetypeReflection();
+    return;
+  }
+
+  startFocusCountdown();
 }
 
 function startFocusCountdown() {
@@ -1059,15 +1068,13 @@ function syncQuestionControls() {
     return;
   }
 
-  const reading = appState.currentReading;
-  const isLoading = reading?.ai?.status === "loading";
   const hasQuestion = Boolean((elements.aiQuestionInput.value || "").trim());
 
-  elements.aiQuestionInput.disabled = isLoading;
-  elements.askAiButton.disabled = isLoading || !hasQuestion;
-  elements.skipQuestionButton.disabled = isLoading;
-  elements.askAiButton.textContent = isLoading ? "Asking AI..." : "Ask AI";
-  elements.skipQuestionButton.textContent = isLoading ? "Please wait..." : "Skip";
+  elements.aiQuestionInput.disabled = false;
+  elements.askAiButton.disabled = !hasQuestion;
+  elements.skipQuestionButton.disabled = false;
+  elements.askAiButton.textContent = "Continue with AI";
+  elements.skipQuestionButton.textContent = "Skip";
 }
 
 function setQuestionStatus(message = "", tone = "neutral") {
@@ -1116,23 +1123,23 @@ function revealPreparedReading() {
   setReadingScrollUnlocked(false);
 }
 
-async function submitAiQuestion() {
-  const question = (elements.aiQuestionInput?.value || "").trim();
-
-  if (!question || !appState.currentReading) {
-    syncQuestionControls();
+async function startAiInterpretationFlow() {
+  if (!appState.currentReading) {
     return;
   }
 
-  appState.pendingQuestion = question;
+  const question = appState.pendingQuestion.trim();
+
   appState.currentReading.ai = {
     question,
     status: "loading",
     interpretation: "",
     error: ""
   };
-  setQuestionStatus("Divine Chamber is writing the interpretation now.", "loading");
-  syncQuestionControls();
+
+  renderReadingView();
+  showView("reading");
+  setReadingScrollUnlocked(false);
 
   try {
     const interpretation = await requestAiInterpretation(appState.currentReading);
@@ -1151,24 +1158,28 @@ async function submitAiQuestion() {
     };
   }
 
-  setQuestionStatus("");
-  syncQuestionControls();
   revealPreparedReading();
 }
 
-function skipAiQuestion() {
-  if (!appState.currentReading) {
+async function submitAiQuestion() {
+  const question = (elements.aiQuestionInput?.value || "").trim();
+
+  if (!question) {
+    syncQuestionControls();
     return;
   }
 
-  appState.currentReading.ai = {
-    question: "",
-    status: "skipped",
-    interpretation: "",
-    error: ""
-  };
+  appState.pendingQuestion = question;
+  setQuestionStatus("");
+  syncQuestionControls();
+  continueAfterQuestionGate();
+}
+
+function skipAiQuestion() {
   appState.pendingQuestion = "";
-  revealPreparedReading();
+  setQuestionStatus("");
+  syncQuestionControls();
+  continueAfterQuestionGate();
 }
 
 function clearFocusCountdown() {
@@ -1264,7 +1275,7 @@ function renderSetupStage() {
   }
 
   if (appState.currentStage === "focus" && selection) {
-    elements.setupStepLabel.textContent = "Step 3";
+    elements.setupStepLabel.textContent = shouldOfferAiStep() ? "Step 4" : "Step 3";
     elements.setupTitle.textContent = "Hold your question in mind for ten slow seconds.";
     elements.setupBody.textContent = isOracleMode
       ? "No typing now. Keep the feeling simple and let the right page rise from the book."
@@ -1282,7 +1293,7 @@ function renderSetupStage() {
   }
 
   if (appState.currentStage === "action" && selection && isArchetypeMode) {
-    elements.setupStepLabel.textContent = "Step 3";
+    elements.setupStepLabel.textContent = shouldOfferAiStep() ? "Step 4" : "Step 3";
     elements.setupTitle.textContent = "Generate the mirror.";
     elements.setupBody.textContent = "";
     elements.setupFootnote.textContent = `Preparing ${selection.name.toLowerCase()}.`;
@@ -1295,7 +1306,7 @@ function renderSetupStage() {
 
   if (appState.currentStage === "question" && selection && shouldOfferAiStep()) {
     const label = getQuestionStepCopy(appState.currentMode, selection);
-    elements.setupStepLabel.textContent = "Step 4";
+    elements.setupStepLabel.textContent = "Step 3";
     elements.setupTitle.textContent = label.title;
     elements.setupBody.textContent = label.body;
     elements.setupFootnote.textContent = label.footnote;
@@ -1347,9 +1358,18 @@ function revealReading() {
     return;
   }
 
-  if (shouldOfferAiStep()) {
-    openQuestionGate();
+  if (shouldOfferAiStep() && appState.pendingQuestion.trim()) {
+    startAiInterpretationFlow();
     return;
+  }
+
+  if (appState.currentReading?.ai) {
+    appState.currentReading.ai = {
+      question: "",
+      status: "skipped",
+      interpretation: "",
+      error: ""
+    };
   }
 
   revealPreparedReading();
@@ -1432,6 +1452,13 @@ function createReading() {
 function redrawReading() {
   if (!appState.selectedSpreadId) {
     showView("setup");
+    return;
+  }
+
+  if (shouldOfferAiStep()) {
+    appState.currentReading = null;
+    appState.pendingQuestion = "";
+    openQuestionGate();
     return;
   }
 
@@ -1593,6 +1620,7 @@ function renderReadingView() {
   const isOracle = reading.mode === "oracle";
   const isArchetype = reading.mode === "archetype";
   const isDice = reading.mode === "dice";
+  const isAiLoading = reading.ai?.status === "loading";
   const overallInsight = isOracle ? null : buildOverallInsight(reading.mode, config, reading.draws);
 
   elements.readingKicker.textContent = isDice
@@ -1611,29 +1639,40 @@ function renderReadingView() {
   elements.readingStage.classList.toggle("reading-stage--oracle", isOracle);
   elements.readingStage.classList.toggle("reading-stage--archetype", isArchetype);
   elements.readingStage.classList.toggle("reading-stage--dice", isDice);
+  elements.readingStage.classList.toggle("reading-stage--ai-loading", isAiLoading);
   elements.readingStage.classList.remove("is-scroll-unlocked");
-  elements.readingSheet.hidden = isDice;
-  elements.redrawTopButton.hidden = !(isOracle || isDice);
+  elements.readingSheet.hidden = isDice || isAiLoading;
+  elements.redrawTopButton.hidden = isAiLoading || !(isOracle || isDice);
   elements.redrawTopButton.setAttribute(
     "aria-label",
     isDice ? "Roll the dice again" : "Open a new oracle reading"
   );
   elements.readingHeadline.textContent = isOracle
-    ? drawsLabel(reading.draws.length, "Opened page", "Opened pages")
+    ? isAiLoading
+      ? "Writing the oracle interpretation"
+      : drawsLabel(reading.draws.length, "Opened page", "Opened pages")
     : isDice
       ? `Total ${reading.result.total}`
-    : overallInsight
-      ? overallInsight.headline
-      : "";
+      : isAiLoading
+        ? "Writing the interpretation"
+      : overallInsight
+        ? overallInsight.headline
+        : "";
   elements.readingSummary.textContent = isOracle
-    ? drawsLabel(reading.draws.length, "One oracle page is ready below.", `${reading.draws.length} oracle pages are ready below.`)
+    ? isAiLoading
+      ? "The pages are open. Divine Chamber is shaping your question into a fuller response."
+      : drawsLabel(reading.draws.length, "One oracle page is ready below.", `${reading.draws.length} oracle pages are ready below.`)
     : isDice
       ? reading.result.explanation
-    : overallInsight
-      ? overallInsight.summary
-      : "";
-  elements.readingGuideText.textContent = isDice ? "" : buildReadingGuide(reading.mode, config);
-  elements.readingMeta.textContent = isOracle
+      : isAiLoading
+        ? "The static reading is ready and will appear as soon as the AI interpretation lands."
+      : overallInsight
+        ? overallInsight.summary
+        : "";
+  elements.readingGuideText.textContent = isDice || isAiLoading ? "" : buildReadingGuide(reading.mode, config);
+  elements.readingMeta.textContent = isAiLoading
+    ? "AI in progress"
+    : isOracle
     ? `${config.positions.length} page${config.positions.length === 1 ? "" : "s"} · oracle`
     : isDice
       ? `${reading.draws[0].value} + ${reading.draws[1].value} · ${reading.result.answer.toLowerCase()}`
@@ -1650,13 +1689,13 @@ function renderReadingView() {
 
   renderReadingBoard(config, reading.draws, reading.mode);
 
-  elements.cardsAccordion.innerHTML = isDice
+  elements.cardsAccordion.innerHTML = isDice || isAiLoading
     ? ""
     : reading.draws
         .map((draw, index) => renderAccordionItem(draw, config.positions[index], index, config))
         .join("");
 
-  elements.readingTakeaways.hidden = isOracle || isDice;
+  elements.readingTakeaways.hidden = isOracle || isDice || isAiLoading;
   elements.readingTakeaways.innerHTML = isOracle
     ? ""
     : isDice
@@ -1705,6 +1744,12 @@ function renderAiInterpretation() {
 }
 
 function renderReadingBoard(config, draws, mode) {
+  if (appState.currentReading?.ai?.status === "loading") {
+    elements.readingBoard.className = "reading-board reading-board--ai-loading";
+    elements.readingBoard.innerHTML = renderAiLoadingBoard(appState.currentReading);
+    return;
+  }
+
   if (mode === "dice") {
     elements.readingBoard.className = "reading-board reading-board--dice-stage";
     elements.readingBoard.innerHTML = renderDiceBoard(appState.currentReading);
@@ -1731,6 +1776,28 @@ function renderReadingBoard(config, draws, mode) {
       openReadingCard(Number(button.dataset.cardIndex));
     });
   });
+}
+
+function renderAiLoadingBoard(reading) {
+  const noun =
+    reading.mode === "oracle"
+      ? "pages"
+      : reading.mode === "archetype"
+        ? "archetypes"
+        : "cards";
+
+  return `
+    <div class="ai-loading-board" aria-live="polite">
+      <div class="ai-loading-board__pulse" aria-hidden="true"></div>
+      <div class="ai-loading-board__copy">
+        <div class="view-kicker">AI interpretation</div>
+        <h2 class="surface-title">Reading the ${noun}</h2>
+        <p class="reading-sheet__summary mb-0">
+          Your divination is already generated. Divine Chamber is now writing the answer to your question.
+        </p>
+      </div>
+    </div>
+  `;
 }
 
 function renderDiceBoard(reading) {
@@ -2753,6 +2820,7 @@ function clearReadingSurface() {
   elements.readingStage.classList.remove("reading-stage--oracle");
   elements.readingStage.classList.remove("reading-stage--archetype");
   elements.readingStage.classList.remove("reading-stage--dice");
+  elements.readingStage.classList.remove("reading-stage--ai-loading");
   elements.readingStage.classList.remove("is-scroll-unlocked");
   elements.readingSheet.hidden = false;
   elements.redrawTopButton.hidden = true;
