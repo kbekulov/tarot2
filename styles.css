@@ -1511,6 +1511,107 @@ body::after {
   gap: 0.35rem;
 }
 
+.question-gate {
+  display: grid;
+  gap: 0.9rem;
+  padding: 0.95rem;
+  border-radius: 1.3rem;
+  border: 1px solid rgba(10, 132, 255, 0.12);
+  background:
+    linear-gradient(180deg, rgba(248, 251, 255, 0.96), rgba(238, 246, 253, 0.92));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.96);
+}
+
+.app-shell[data-mode="archetype"] .question-gate {
+  border-color: rgba(91, 113, 133, 0.14);
+  background:
+    linear-gradient(180deg, rgba(248, 251, 254, 0.96), rgba(239, 246, 251, 0.92));
+}
+
+.question-gate__copy {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.question-gate__field {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.question-gate__label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-soft);
+}
+
+.question-gate__input {
+  width: 100%;
+  min-height: 7rem;
+  resize: vertical;
+  border: 1px solid rgba(22, 34, 54, 0.08);
+  border-radius: 1.15rem;
+  padding: 0.9rem 0.95rem;
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--text);
+  font: inherit;
+  line-height: 1.55;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92);
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    background 180ms ease;
+}
+
+.question-gate__input:focus {
+  outline: none;
+  border-color: rgba(10, 132, 255, 0.24);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.94),
+    0 0 0 3px rgba(10, 132, 255, 0.08);
+}
+
+.app-shell[data-mode="archetype"] .question-gate__input:focus {
+  border-color: rgba(91, 113, 133, 0.24);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.94),
+    0 0 0 3px rgba(91, 113, 133, 0.08);
+}
+
+.question-gate__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.question-gate__status {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--text-soft);
+}
+
+.question-gate__status.is-loading::before {
+  content: "";
+  width: 0.95rem;
+  height: 0.95rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  border: 2px solid rgba(10, 132, 255, 0.18);
+  border-top-color: rgba(10, 132, 255, 0.7);
+  animation: question-gate-spin 680ms linear infinite;
+}
+
+.app-shell[data-mode="archetype"] .question-gate__status.is-loading::before {
+  border-color: rgba(91, 113, 133, 0.18);
+  border-top-color: rgba(91, 113, 133, 0.7);
+}
+
+.question-gate__status.is-error {
+  color: #a0523f;
+}
+
 .setup-stage--action .stage-panel {
   align-content: start;
 }
@@ -2524,6 +2625,51 @@ body::after {
   gap: 0.75rem;
 }
 
+.ai-interpretation {
+  display: grid;
+  gap: 0.8rem;
+  padding: 1rem;
+  border-radius: 1.35rem;
+  border: 1px solid rgba(10, 132, 255, 0.1);
+  background:
+    linear-gradient(180deg, rgba(247, 251, 255, 0.96), rgba(238, 246, 253, 0.92));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.96),
+    0 10px 22px rgba(86, 112, 149, 0.08);
+}
+
+.reading-stage--archetype .ai-interpretation {
+  border-color: rgba(91, 113, 133, 0.12);
+  background:
+    linear-gradient(180deg, rgba(248, 251, 254, 0.96), rgba(239, 246, 251, 0.92));
+}
+
+.reading-stage--oracle .ai-interpretation {
+  border-color: rgba(159, 101, 52, 0.14);
+  background:
+    linear-gradient(180deg, rgba(254, 250, 244, 0.96), rgba(248, 240, 232, 0.94));
+}
+
+.ai-interpretation__question {
+  font-size: 0.9rem;
+  color: var(--text-soft);
+}
+
+.ai-interpretation__body {
+  display: grid;
+  gap: 0.78rem;
+  color: var(--text);
+  line-height: 1.7;
+}
+
+.ai-interpretation__body p {
+  margin: 0;
+}
+
+.ai-interpretation__body--error {
+  color: var(--text-soft);
+}
+
 .reading-accordion .accordion-item {
   overflow: hidden;
   border-radius: 1.3rem;
@@ -2942,6 +3088,16 @@ body::after {
   }
 }
 
+@keyframes question-gate-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .app-frame::after,
   .app-ambient-waves__band {
@@ -2957,7 +3113,8 @@ body::after {
   .mode-choice__artifact--archetype .mode-choice__glyph::after,
   .mode-choice__die,
   .dice-cast__die,
-  .dice-cast__result {
+  .dice-cast__result,
+  .question-gate__status.is-loading::before {
     animation: none;
   }
 }
