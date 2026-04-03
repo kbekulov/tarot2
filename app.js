@@ -1073,7 +1073,7 @@ function syncQuestionControls() {
   elements.aiQuestionInput.disabled = false;
   elements.askAiButton.disabled = !hasQuestion;
   elements.skipQuestionButton.disabled = false;
-  elements.askAiButton.textContent = "Continue with AI";
+  elements.askAiButton.textContent = "Submit";
   elements.skipQuestionButton.textContent = "Skip";
 }
 
@@ -2191,42 +2191,42 @@ function buildArchetypeReflectionPrompt(draw, position) {
 function getQuestionStepCopy(mode, selection) {
   if (mode === "oracle") {
     return {
-      title: "Add a question before the pages open.",
-      body: "Ask AI about the opened pages, or skip and read the oracle exactly as it landed.",
-      footnote: `Your ${selection.name.toLowerCase()} is ready to open.`,
+      title: "What is your question?",
+      body: "",
+      footnote: "",
       cardName: "The pages are ready",
-      cardPrompt: "Ask or skip",
-      panelLabel: "Optional AI question",
-      panelTitle: "Ask about these pages.",
-      panelBody: "If you ask a question, Divine Chamber will add an AI interpretation below the original oracle pages.",
-      placeholder: "What should I understand from these pages?"
+      cardPrompt: "Submit or skip",
+      panelLabel: "",
+      panelTitle: "",
+      panelBody: "",
+      placeholder: "Type your question"
     };
   }
 
   if (mode === "archetype") {
     return {
-      title: "Add a question before the mirror opens.",
-      body: "Ask AI about the revealed archetypes, or skip and open the static mirror reading as it stands.",
-      footnote: `Your ${selection.name.toLowerCase()} is ready to reflect.`,
+      title: "What is your question?",
+      body: "",
+      footnote: "",
       cardName: "The mirror is waiting",
-      cardPrompt: "Ask or skip",
-      panelLabel: "Optional AI question",
-      panelTitle: "Ask about this pattern.",
-      panelBody: "If you ask a question, Divine Chamber will add an AI interpretation below the original archetype mirror reading.",
-      placeholder: "What should I understand about this pattern?"
+      cardPrompt: "Submit or skip",
+      panelLabel: "",
+      panelTitle: "",
+      panelBody: "",
+      placeholder: "Type your question"
     };
   }
 
   return {
-    title: "Add a question before the cards open.",
-    body: "Ask AI about the cards you drew, or skip and open the static tarot reading exactly as before.",
-    footnote: `Your ${selection.name.toLowerCase()} spread is ready.`,
+    title: "What is your question?",
+    body: "",
+    footnote: "",
     cardName: "The cards are ready",
-    cardPrompt: "Ask or skip",
-    panelLabel: "Optional AI question",
-    panelTitle: "Ask about this spread.",
-    panelBody: "If you ask a question, Divine Chamber will add an AI interpretation below the original tarot reading.",
-    placeholder: "What should I understand about this spread?"
+    cardPrompt: "Submit or skip",
+    panelLabel: "",
+    panelTitle: "",
+    panelBody: "",
+    placeholder: "Type your question"
   };
 }
 
