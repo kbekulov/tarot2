@@ -2199,9 +2199,9 @@ body::after {
   justify-content: center;
   min-height: 100%;
   padding:
-    clamp(5.2rem, 15vh, 6.2rem)
+    clamp(3.7rem, 10.5vh, 4.7rem)
     clamp(0.75rem, 3vw, 1.1rem)
-    clamp(1.4rem, 6vh, 2rem);
+    clamp(2.4rem, 8vh, 3.1rem);
 }
 
 .reading-stage--oracle .reading-board--ai-loading {
