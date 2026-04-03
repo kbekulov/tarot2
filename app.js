@@ -1872,7 +1872,7 @@ function renderAiLoadingBoard(reading) {
         <div class="view-kicker">Personalised interpretation</div>
         <h2 class="surface-title">Reading the ${noun}</h2>
         <p class="reading-sheet__summary mb-0">
-          Your divination is already generated. Divine Chamber is now writing the answer to your question.
+          Your divination is already prepared. Divine Chamber is now writing the answer to your question.
         </p>
         <div class="ai-loading-board__progress" aria-hidden="true">
           <span class="ai-loading-board__progress-fill"></span>
