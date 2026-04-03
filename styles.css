@@ -2176,6 +2176,7 @@ body::after {
   display: grid;
   justify-items: center;
   gap: 1rem;
+  margin-inline: auto;
   padding: 1.4rem 1.2rem;
   border-radius: 1.7rem;
   border: 1px solid rgba(255, 255, 255, 0.78);
@@ -2190,6 +2191,26 @@ body::after {
 .reading-stage--oracle .ai-loading-board {
   background:
     linear-gradient(180deg, rgba(254, 250, 244, 0.96), rgba(248, 240, 232, 0.94));
+}
+
+.reading-stage--oracle.reading-stage--ai-loading .reading-stage__board {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding:
+    clamp(5.2rem, 15vh, 6.2rem)
+    clamp(0.75rem, 3vw, 1.1rem)
+    clamp(1.4rem, 6vh, 2rem);
+}
+
+.reading-stage--oracle .reading-board--ai-loading {
+  display: grid;
+  width: 100%;
+  height: auto;
+  min-height: clamp(18rem, 48vh, 24rem);
+  margin: 0;
+  perspective: none;
 }
 
 .reading-stage--archetype .ai-loading-board {
