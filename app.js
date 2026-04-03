@@ -1664,8 +1664,8 @@ function renderReadingView() {
       : drawsLabel(reading.draws.length, "One oracle page is ready below.", `${reading.draws.length} oracle pages are ready below.`)
     : isDice
       ? reading.result.explanation
-      : isAiLoading
-        ? "The static reading is ready and will appear as soon as the AI interpretation lands."
+    : isAiLoading
+        ? "The static reading is ready and will appear as soon as the personalised interpretation lands."
       : overallInsight
         ? overallInsight.summary
         : "";
@@ -1726,7 +1726,7 @@ function renderAiInterpretation() {
   }
 
   elements.aiInterpretationPanel.hidden = false;
-  elements.aiInterpretationTitle.textContent = "Question Response";
+  elements.aiInterpretationTitle.textContent = "Personalised Interpretation";
   elements.aiInterpretationQuestion.textContent = ai.question
     ? `Question: ${ai.question}`
     : "";
@@ -1790,7 +1790,7 @@ function renderAiLoadingBoard(reading) {
     <div class="ai-loading-board" aria-live="polite">
       <div class="ai-loading-board__pulse" aria-hidden="true"></div>
       <div class="ai-loading-board__copy">
-        <div class="view-kicker">AI interpretation</div>
+        <div class="view-kicker">Personalised interpretation</div>
         <h2 class="surface-title">Reading the ${noun}</h2>
         <p class="reading-sheet__summary mb-0">
           Your divination is already generated. Divine Chamber is now writing the answer to your question.
