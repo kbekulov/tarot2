@@ -2211,6 +2211,7 @@ body::after {
   min-height: clamp(18rem, 48vh, 24rem);
   margin: 0;
   perspective: none;
+  transform: translateY(-1.9rem);
 }
 
 .reading-stage--archetype .ai-loading-board {
@@ -3525,6 +3526,10 @@ body::after {
 @media (max-height: 760px) {
   .reading-stage {
     --sheet-peek: 4.75rem;
+  }
+
+  .reading-stage--oracle .reading-board--ai-loading {
+    transform: translateY(-1.2rem);
   }
 
   .reading-stage--oracle .reading-stage__board {
