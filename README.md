@@ -19,8 +19,14 @@ Divine Chamber is currently a static, production-minded web app with:
 - mobile-focused ritual flows and result screens
 - local tarot artwork generation
 - predefined Oracle and Archetype content with no AI dependency
-- optional personalised interpretation support for Tarot, Oracle, and Archetype Mirror through a separate AI endpoint
+- optional personalised interpretation support for Tarot, Oracle, and Archetype Mirror through a separate Cloudflare Worker AI endpoint
 - install / Add to Home Screen support through a web manifest and service worker
+
+## Repository Roles
+
+- `PreProd2`: `github.com/kbekulov/tarot2` - active development branch and default push target
+- `PreProd`: `github.com/kbekulov/tarot` - staged copy synced from `PreProd2` when needed
+- `Prod`: `github.com/kbekulov/divinechamber` - production copy synced from `PreProd2` when needed
 
 ## Entry Pages
 
@@ -56,48 +62,52 @@ Using a local server is recommended over opening the files directly, because ins
 
 This project is currently designed to stay on GitHub Pages for the frontend while using a separate Cloudflare Worker for AI-backed personalised interpretations.
 
-### 1. Deploy the Worker
+### Current Live Setup
 
-From the worker folder:
+- Worker name: `divine-chamber-ai`
+- Worker endpoint: `https://divine-chamber-ai.kiril-950.workers.dev/api/divination/interpret`
+- Current model: `@cf/openai/gpt-oss-20b`
+- Current browser origins allowed by the live Worker:
+  - `https://tarot.bekulov.com`
+  - `https://tarot2.bekulov.com`
+  - `https://chamber.quest`
 
-```bash
-cd workers/divine-chamber-ai
-wrangler deploy
-```
-
-The worker configuration already includes the required Workers AI binding name:
-
-```toml
-[ai]
-binding = "AI"
-```
-
-### 2. Optional: Restrict CORS To Your Site
-
-By default, the worker allows requests from any origin. If you want to restrict it to your site, add:
-
-```toml
-[vars]
-ALLOWED_ORIGIN = "https://tarot.bekulov.com"
-```
-
-Then redeploy the worker.
-
-### 3. Connect The Frontend To The Worker
-
-After deploy, take your worker URL and place it into [site-config.js](site-config.js):
+The frontend reads the Worker endpoint from [site-config.js](site-config.js):
 
 ```js
 window.DIVINE_CHAMBER_CONFIG = {
-  aiInterpretEndpoint: "https://your-worker-subdomain.workers.dev/api/divination/interpret"
+  aiInterpretEndpoint: "https://divine-chamber-ai.kiril-950.workers.dev/api/divination/interpret"
 };
 ```
 
-Then redeploy or republish the GitHub Pages site so the updated config is served.
+### Important Deployment Note
 
-### 4. What Happens If It Is Not Configured
+The Cloudflare Worker is currently dashboard-managed.
 
-If the worker URL is missing, or the Worker / Workers AI binding is not set up yet, the app will still show the original static divination result and fall back gracefully.
+That means:
+
+- pushing this repo updates the frontend and the Worker source files stored in the repo
+- but it does **not** automatically redeploy the live Worker code in Cloudflare
+
+If the Worker logic changes, the Cloudflare dashboard code must also be updated and redeployed unless the Worker is later moved to a full Wrangler-based deploy flow.
+
+### Worker Files In This Repo
+
+These files contain the Worker-side implementation tracked in Git:
+
+- [cloudflare/divination-ai-handler.js](cloudflare/divination-ai-handler.js): shared prompt building, response parsing, and CORS logic
+- [workers/divine-chamber-ai/src/index.js](workers/divine-chamber-ai/src/index.js): Worker entry point
+- [workers/divine-chamber-ai/wrangler.toml](workers/divine-chamber-ai/wrangler.toml): Wrangler configuration, including the `AI` binding
+
+### Minimum Cloudflare Requirements
+
+- a Cloudflare Worker deployed at the configured endpoint
+- a Workers AI binding named `AI`
+- Worker code deployed with the same logic as the repo's current AI handler
+
+### If Personalised Interpretations Fail
+
+If the Worker URL is missing, the live Worker code is outdated, or the Workers AI binding is not working, the app will still reveal the original static divination result and fall back gracefully.
 
 ## Artwork And Notices
 
