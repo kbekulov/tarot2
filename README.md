@@ -7,7 +7,7 @@ It currently includes four modes:
 - `Tarot`: symbolic spreads with card positions, upright/reversed draws, and written interpretations
 - `Oracle`: short page-style guidance with 1-page, 2-page, and 3-page layouts
 - `Archetype Mirror`: Jungian-inspired reflection spreads built around archetypes rather than prediction
-- `Dice Cast`: a fast two-dice yes / maybe / no reading with the rolled total
+- `Cleromancy`: a cast of one or two dice that turns numbers `1-12` into graded omen outcomes
 
 The project is designed to feel like an iPhone-native ritual flow while still working as a web app in mobile Safari and desktop browsers.
 
@@ -19,6 +19,7 @@ Divine Chamber is currently a static, production-minded web app with:
 - mobile-focused ritual flows and result screens
 - local tarot artwork generation
 - predefined Oracle and Archetype content with no AI dependency
+- a Cleromancy mode with random one-die or two-dice casting and a 12-step outcome scale
 - optional personalised interpretation support for Tarot, Oracle, and Archetype Mirror through a separate Cloudflare Worker AI endpoint
 - install / Add to Home Screen support through a web manifest and service worker
 
@@ -32,6 +33,11 @@ Divine Chamber is currently a static, production-minded web app with:
 
 - [index.html](index.html): the main browser version, intended for real use in Safari or other browsers
 - [iphone.html](iphone.html): the framed demo version with mocked iPhone chrome
+
+## Current Mode Labels
+
+- Landing screen: `Tarot`, `Oracle`, `Archetype Mirror`, `Cleromancy`
+- Header navigation: `Tarot`, `Oracle`, `Mirror`, `Dice`
 
 ## Project Structure
 
@@ -104,6 +110,7 @@ These files contain the Worker-side implementation tracked in Git:
 - a Cloudflare Worker deployed at the configured endpoint
 - a Workers AI binding named `AI`
 - Worker code deployed with the same logic as the repo's current AI handler
+- Worker code updated manually in the Cloudflare dashboard when AI backend changes are made in Git
 
 ### If Personalised Interpretations Fail
 
