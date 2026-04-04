@@ -1763,7 +1763,7 @@ function renderReadingView() {
   const overallInsight = isOracle ? null : buildOverallInsight(reading.mode, config, reading.draws);
 
   elements.readingKicker.textContent = isDice
-    ? "Cleromancy"
+    ? "Dice cast"
     : isArchetype
       ? "Mirror revealed"
       : "Reading revealed";
