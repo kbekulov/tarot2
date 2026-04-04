@@ -1540,6 +1540,7 @@ function redrawReading() {
     return;
   }
 
+  appState.currentReading = null;
   revealReading();
 }
 
