@@ -1,4 +1,4 @@
-const MODEL = "@cf/meta/llama-3.1-8b-instruct";
+const MODEL = "@cf/openai/gpt-oss-20b";
 const JSON_HEADERS = {
   "content-type": "application/json; charset=UTF-8"
 };
