@@ -48,47 +48,50 @@ export async function handleInterpretPost(context) {
     return json({ error: "Result payload is required." }, 400, context);
   }
 
-  const messages = buildPromptMessages({ type, question, result });
+  const aiPayload = buildAiRunPayload({ type, question, result });
 
   try {
-    const aiResult = await env.AI.run(MODEL, {
-      messages,
-      temperature: 0.7,
-      max_tokens: 900
-    });
+    const aiResult = await env.AI.run(MODEL, aiPayload);
     const interpretation = normalizeInterpretation(extractAiText(aiResult));
 
     if (!interpretation) {
+      console.error("Divine Chamber AI returned an unreadable response.", {
+        model: MODEL,
+        type,
+        aiResult
+      });
       throw new Error("Empty AI response");
     }
 
     return json({ interpretation }, 200, context);
   } catch (error) {
+    console.error("Divine Chamber AI request failed.", {
+      model: MODEL,
+      type,
+      message: error?.message || String(error)
+    });
     return json({ error: "The personalised interpretation could not be generated right now." }, 502, context);
   }
 }
 
-function buildPromptMessages({ type, question, result }) {
+function buildAiRunPayload({ type, question, result }) {
   const promptHeader = buildPromptHeader(type);
   const resultContext = buildResultContext(type, result);
 
-  return [
-    {
-      role: "system",
-      content:
-        `${promptHeader}\n\n` +
-        "Write a reflective interpretation in natural prose. Return between 2 and 5 paragraphs total. " +
-        "Do not use bullet points. Keep the tone calm, clear, and meaningful. " +
-        "Do not mention being an AI model. Do not apologize. Stay grounded in the provided divination data."
-    },
-    {
-      role: "user",
-      content:
-        `User question:\n${question}\n\n` +
-        `Divination result:\n${resultContext}\n\n` +
-        "Interpret this divination in a way that directly responds to the user's question while respecting the specific divination type."
+  return {
+    instructions:
+      `${promptHeader}\n\n` +
+      "Write a reflective interpretation in natural prose. Return between 2 and 5 paragraphs total. " +
+      "Do not use bullet points. Keep the tone calm, clear, and meaningful. " +
+      "Do not mention being an AI model. Do not apologize. Stay grounded in the provided divination data.",
+    input:
+      `User question:\n${question}\n\n` +
+      `Divination result:\n${resultContext}\n\n` +
+      "Interpret this divination in a way that directly responds to the user's question while respecting the specific divination type.",
+    reasoning: {
+      effort: "low"
     }
-  ];
+  };
 }
 
 function buildPromptHeader(type) {
@@ -179,23 +182,71 @@ function buildResultContext(type, result) {
 }
 
 function extractAiText(aiResult) {
-  if (typeof aiResult === "string") {
-    return aiResult;
+  const candidates = [];
+
+  collectTextFragments(aiResult, candidates);
+
+  return candidates
+    .map((fragment) => String(fragment || "").trim())
+    .filter(Boolean)
+    .join("\n\n")
+    .trim();
+}
+
+function collectTextFragments(node, fragments) {
+  if (!node) {
+    return;
   }
 
-  if (typeof aiResult?.response === "string") {
-    return aiResult.response;
+  if (typeof node === "string") {
+    fragments.push(node);
+    return;
   }
 
-  if (typeof aiResult?.result?.response === "string") {
-    return aiResult.result.response;
+  if (Array.isArray(node)) {
+    node.forEach((item) => collectTextFragments(item, fragments));
+    return;
   }
 
-  if (typeof aiResult?.output_text === "string") {
-    return aiResult.output_text;
+  if (typeof node !== "object") {
+    return;
   }
 
-  return "";
+  if (typeof node.output_text === "string") {
+    fragments.push(node.output_text);
+  }
+
+  if (typeof node.response === "string") {
+    fragments.push(node.response);
+  }
+
+  if (typeof node.text === "string") {
+    fragments.push(node.text);
+  }
+
+  if (typeof node.content === "string") {
+    fragments.push(node.content);
+  }
+
+  if (node.result) {
+    collectTextFragments(node.result, fragments);
+  }
+
+  if (node.output) {
+    collectTextFragments(node.output, fragments);
+  }
+
+  if (node.content) {
+    collectTextFragments(node.content, fragments);
+  }
+
+  if (node.message) {
+    collectTextFragments(node.message, fragments);
+  }
+
+  if (node.messages) {
+    collectTextFragments(node.messages, fragments);
+  }
 }
 
 function normalizeInterpretation(text) {
