@@ -83,7 +83,8 @@ function buildAiRunPayload({ type, question, result }) {
       `${promptHeader}\n\n` +
       "Write a reflective interpretation in natural prose. Return between 2 and 5 paragraphs total. " +
       "Do not use bullet points. Keep the tone calm, clear, and meaningful. " +
-      "Do not mention being an AI model. Do not apologize. Stay grounded in the provided divination data.",
+      "Do not mention being an AI model. Do not apologize. Stay grounded in the provided divination data. " +
+      "Do not use em dashes. Use commas, periods, or colons instead.",
     input:
       `User question:\n${question}\n\n` +
       `Divination result:\n${resultContext}\n\n` +
@@ -252,6 +253,7 @@ function collectTextFragments(node, fragments) {
 function normalizeInterpretation(text) {
   const cleaned = String(text || "")
     .replace(/\r/g, "")
+    .replace(/—/g, ", ")
     .replace(/^\s*[-*•]\s+/gm, "")
     .replace(/^#{1,6}\s+/gm, "")
     .trim();
