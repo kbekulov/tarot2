@@ -249,28 +249,91 @@ const oracleCatalog = [
 
 const diceCatalog = [
   {
-    id: "double-dice",
-    name: "Dice Cast",
-    shortLabel: "2 dice",
-    compactHint: "Yes / Maybe / No",
-    description: "Two dice are thrown together for a direct total and a yes, maybe, or no.",
+    id: "cleromancy-cast",
+    name: "Cleromancy",
+    shortLabel: "1-2 dice",
+    compactHint: "1-12 omens",
+    description: "One or two dice reveal a numbered omen and the force behind it.",
     layoutClass: "spread-layout-dice",
     positions: [
       {
-        id: "left-die",
-        title: "Left Die",
-        summary: "The first die in the cast.",
-        purpose: "This die is part of the total that shapes the answer."
+        id: "first-die",
+        title: "First Die",
+        summary: "The die that opens the cast.",
+        purpose: "This die begins the number that shapes the omen."
       },
       {
-        id: "right-die",
-        title: "Right Die",
-        summary: "The second die in the cast.",
-        purpose: "This die completes the total and final answer."
+        id: "second-die",
+        title: "Second Die",
+        summary: "The die that may complete the cast.",
+        purpose: "If a second die appears, it completes the final number and omen."
       }
     ]
   }
 ];
+
+const cleromancyOutcomeCatalog = {
+  1: {
+    primary: "Forbidden",
+    secondary: "Abort immediately",
+    tone: "danger"
+  },
+  2: {
+    primary: "Disaster",
+    secondary: "Absolute no",
+    tone: "danger"
+  },
+  3: {
+    primary: "Severe resistance",
+    secondary: "High risk of failure",
+    tone: "resistance"
+  },
+  4: {
+    primary: "Resistance",
+    secondary: "Proceed with caution",
+    tone: "resistance"
+  },
+  5: {
+    primary: "Weak uncertainty",
+    secondary: "Unstable outcome",
+    tone: "uncertain"
+  },
+  6: {
+    primary: "Developing",
+    secondary: "Could go either way",
+    tone: "uncertain"
+  },
+  7: {
+    primary: "Neutral",
+    secondary: "Turning point",
+    tone: "neutral"
+  },
+  8: {
+    primary: "Mild progress",
+    secondary: "Small advantage",
+    tone: "progress"
+  },
+  9: {
+    primary: "Strong progress",
+    secondary: "Favorable momentum",
+    tone: "progress"
+  },
+  10: {
+    primary: "Success likely",
+    secondary: "Clear yes",
+    tone: "success"
+  },
+  11: {
+    primary: "Strong success",
+    secondary: "Dominant advantage",
+    tone: "success"
+  },
+  12: {
+    primary: "Peak success",
+    secondary: "Fate-aligned outcome",
+    tone: "success"
+  }
+};
 
 const archetypeMirrorData = window.ARCHETYPE_MIRROR || { spreads: [], archetypes: [] };
 const archetypeCatalog = Array.isArray(archetypeMirrorData.spreads)
@@ -1310,7 +1373,7 @@ function renderSetupStage() {
     elements.setupStepLabel.textContent = "Step 1";
     elements.setupTitle.textContent = "Choose your lens.";
     elements.setupBody.textContent =
-      "Tarot reads symbols. Oracle opens pages. Archetype Mirror reflects inner patterns. Dice gives a direct total and a yes, maybe, or no.";
+      "Tarot reads symbols. Oracle opens pages. Archetype Mirror reflects inner patterns. Cleromancy casts one or two dice into a numbered omen.";
     elements.setupFootnote.textContent = "Choose one to begin.";
     updateInstallCta();
     return;
@@ -1610,43 +1673,60 @@ function drawArchetypes(count, config) {
 }
 
 function buildDiceReading(config) {
-  const leftValue = rollDieValue();
-  const rightValue = rollDieValue();
-  const total = leftValue + rightValue;
-  const verdict = getDiceVerdict(total);
+  const shouldUseTwoDice = Math.random() < 0.5;
+  const firstValue = rollDieValue();
+  const secondValue = shouldUseTwoDice ? rollDieValue() : null;
+  const total = shouldUseTwoDice ? firstValue + secondValue : firstValue;
+  const omen = getCleromancyOmen(total);
+  const draws = shouldUseTwoDice
+    ? [
+        {
+          kind: "dice",
+          id: "die-left",
+          value: firstValue,
+          angle: randomBetween(-8, -2),
+          startX: "-4.6rem",
+          startY: "-4.8rem",
+          startRotate: `${randomBetween(-260, -170)}deg`,
+          endX: "-4.35rem",
+          endY: "0.12rem"
+        },
+        {
+          kind: "dice",
+          id: "die-right",
+          value: secondValue,
+          angle: randomBetween(2, 8),
+          startX: "4.9rem",
+          startY: "-4.2rem",
+          startRotate: `${randomBetween(175, 255)}deg`,
+          endX: "4.35rem",
+          endY: "0.12rem"
+        }
+      ]
+    : [
+        {
+          kind: "dice",
+          id: "die-single",
+          value: firstValue,
+          angle: randomBetween(-4, 4),
+          startX: "-0.1rem",
+          startY: "-5.1rem",
+          startRotate: `${randomBetween(-190, -120)}deg`,
+          endX: "0rem",
+          endY: "0.08rem"
+        }
+      ];
 
   return {
     mode: "dice",
     configId: config.id,
-    draws: [
-      {
-        kind: "dice",
-        id: "die-left",
-        value: leftValue,
-        angle: randomBetween(-8, -2),
-        startX: "-4.6rem",
-        startY: "-4.8rem",
-        startRotate: `${randomBetween(-260, -170)}deg`,
-        endX: "-4.35rem",
-        endY: "0.12rem"
-      },
-      {
-        kind: "dice",
-        id: "die-right",
-        value: rightValue,
-        angle: randomBetween(2, 8),
-        startX: "4.9rem",
-        startY: "-4.2rem",
-        startRotate: `${randomBetween(175, 255)}deg`,
-        endX: "4.35rem",
-        endY: "0.12rem"
-      }
-    ],
+    draws,
     result: {
       total,
-      answer: verdict.answer,
-      answerTone: verdict.tone,
-      explanation: verdict.explanation
+      primary: omen.primary,
+      secondary: omen.secondary,
+      answerTone: omen.tone,
+      castLabel: shouldUseTwoDice ? "Two-dice cast" : "Single-die cast"
     }
   };
 }
@@ -1655,28 +1735,8 @@ function rollDieValue() {
   return Math.floor(Math.random() * 6) + 1;
 }
 
-function getDiceVerdict(total) {
-  if (total <= 4) {
-    return {
-      answer: "No",
-      tone: "no",
-      explanation: "The cast closes this one down for now."
-    };
-  }
-
-  if (total <= 8) {
-    return {
-      answer: "Maybe",
-      tone: "maybe",
-      explanation: "The cast stays open, but it is not settled yet."
-    };
-  }
-
-  return {
-    answer: "Yes",
-    tone: "yes",
-    explanation: "The cast lands on a clear opening."
-  };
+function getCleromancyOmen(total) {
+  return cleromancyOutcomeCatalog[total] || cleromancyOutcomeCatalog[7];
 }
 
 function randomBetween(minimum, maximum) {
@@ -1703,12 +1763,12 @@ function renderReadingView() {
   const overallInsight = isOracle ? null : buildOverallInsight(reading.mode, config, reading.draws);
 
   elements.readingKicker.textContent = isDice
-    ? "Dice cast"
+    ? "Cleromancy"
     : isArchetype
       ? "Mirror revealed"
       : "Reading revealed";
   elements.readingSurfaceKicker.textContent = isDice
-    ? "Result"
+    ? "Omen"
     : isOracle
       ? "Pages"
       : isArchetype
@@ -1724,14 +1784,14 @@ function renderReadingView() {
   elements.redrawTopButton.hidden = isAiLoading || !(isOracle || isDice);
   elements.redrawTopButton.setAttribute(
     "aria-label",
-    isDice ? "Roll the dice again" : "Open a new oracle reading"
+    isDice ? "Cast again" : "Open a new oracle reading"
   );
   elements.readingHeadline.textContent = isOracle
     ? isAiLoading
       ? "Writing the oracle interpretation"
       : drawsLabel(reading.draws.length, "Opened page", "Opened pages")
     : isDice
-      ? `Total ${reading.result.total}`
+      ? `Number ${reading.result.total}`
       : isAiLoading
         ? "Writing the interpretation"
       : overallInsight
@@ -1742,7 +1802,7 @@ function renderReadingView() {
       ? "The pages are open. Divine Chamber is shaping your question into a fuller response."
       : drawsLabel(reading.draws.length, "One oracle page is ready below.", `${reading.draws.length} oracle pages are ready below.`)
     : isDice
-      ? reading.result.explanation
+      ? `${reading.draws.length === 1 ? "A single die" : "Two dice"} prepared this omen. ${reading.result.secondary}.`
     : isAiLoading
         ? "The static reading is ready and will appear as soon as the personalised interpretation lands."
       : overallInsight
@@ -1754,15 +1814,15 @@ function renderReadingView() {
     : isOracle
     ? `${config.positions.length} page${config.positions.length === 1 ? "" : "s"} · oracle`
     : isDice
-      ? `${reading.draws[0].value} + ${reading.draws[1].value} · ${reading.result.answer.toLowerCase()}`
+      ? `${reading.draws.map((draw) => draw.value).join(" + ")} · ${reading.draws.length === 1 ? "1 die" : "2 dice"}`
     : isArchetype
       ? `${config.positions.length} positions · inner reflection`
       : `${config.positions.length} cards · ${countReversed(reading.draws)} reversed`;
   elements.redrawButton.textContent = isOracle
     ? "Open new pages"
     : isDice
-      ? "Roll again"
-    : isArchetype
+      ? "Cast again"
+      : isArchetype
       ? "Generate again"
       : "Draw again";
 
@@ -1887,24 +1947,36 @@ function renderAiLoadingBoard(reading) {
 }
 
 function renderDiceBoard(reading) {
-  const [leftDie, rightDie] = reading.draws;
   const result = reading.result;
+  const isSingleDie = reading.draws.length === 1;
+  const diceMarkup = reading.draws
+    .map((die, index) =>
+      renderDiceDie(
+        die,
+        isSingleDie
+          ? "dice-cast__die--single"
+          : index === 0
+            ? "dice-cast__die--left"
+            : "dice-cast__die--right"
+      )
+    )
+    .join("");
 
   return `
     <div class="dice-cast" aria-live="polite">
-      <div class="dice-cast__stage" aria-hidden="true">
-        ${renderDiceDie(leftDie, "dice-cast__die--left")}
-        ${renderDiceDie(rightDie, "dice-cast__die--right")}
+      <div class="dice-cast__stage ${isSingleDie ? "dice-cast__stage--single" : "dice-cast__stage--double"}" aria-hidden="true">
+        ${diceMarkup}
       </div>
       <div class="dice-cast__result dice-cast__result--${result.answerTone}">
-        <div class="dice-cast__answer">${result.answer}</div>
+        <div class="dice-cast__answer">${result.primary}</div>
+        <p class="dice-cast__answer-detail">${result.secondary}</p>
         <div class="dice-cast__total">
-          <span class="dice-cast__total-label">Total</span>
+          <span class="dice-cast__total-label">Number</span>
           <span class="dice-cast__total-value">${result.total}</span>
         </div>
-        <p class="dice-cast__copy">${result.explanation}</p>
+        <p class="dice-cast__copy">${result.castLabel}</p>
         <button id="diceRollButton" class="btn btn-ios btn-ios--secondary" type="button">
-          Roll again
+          Cast again
         </button>
       </div>
     </div>
@@ -2887,8 +2959,8 @@ function setReadingScrollUnlocked(unlocked) {
 function getSlipLabels() {
   if (appState.currentReading?.mode === "dice") {
     return {
-      locked: "Dice result",
-      unlocked: "Dice result"
+      locked: "Cleromancy result",
+      unlocked: "Cleromancy result"
     };
   }
 
