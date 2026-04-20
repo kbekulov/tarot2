@@ -654,6 +654,10 @@ const elements = {
   askAiButton: document.querySelector("#askAiButton"),
   skipQuestionButton: document.querySelector("#skipQuestionButton"),
   setupFootnote: document.querySelector("#setupFootnote"),
+  historyButton: document.querySelector("#historyButton"),
+  historyModal: document.querySelector("#historyModal"),
+  historyList: document.querySelector("#historyList"),
+  clearHistoryButton: document.querySelector("#clearHistoryButton"),
   installAppButton: document.querySelector("#installAppButton"),
   installModal: document.querySelector("#installModal"),
   installModalTitle: document.querySelector("#installModalTitle"),
@@ -680,6 +684,10 @@ const elements = {
   aiInterpretationTitle: document.querySelector("#aiInterpretationTitle"),
   aiInterpretationQuestion: document.querySelector("#aiInterpretationQuestion"),
   aiInterpretationBody: document.querySelector("#aiInterpretationBody"),
+  saveReadingButton: document.querySelector("#saveReadingButton"),
+  copyReadingButton: document.querySelector("#copyReadingButton"),
+  shareReadingButton: document.querySelector("#shareReadingButton"),
+  readingActionStatus: document.querySelector("#readingActionStatus"),
   redrawButton: document.querySelector("#redrawButton"),
   redrawTopButton: document.querySelector("#redrawTopButton"),
   backButton: document.querySelector("#backButton"),
@@ -707,6 +715,9 @@ const appState = {
 };
 const DEFAULT_AI_INTERPRET_ENDPOINT = "/api/divination/interpret";
 const AI_ENABLED_MODES = new Set(["tarot", "oracle", "archetype"]);
+const READING_HISTORY_KEY = "divine-chamber-reading-history-v1";
+const MAX_READING_HISTORY_ITEMS = 18;
+let readingActionStatusTimer = null;
 
 initialize();
 
@@ -731,8 +742,14 @@ function initialize() {
       startModeFlow(button.dataset.selectMode);
     });
   });
+  elements.historyButton?.addEventListener("click", openHistoryModal);
+  elements.clearHistoryButton?.addEventListener("click", clearReadingHistory);
+  elements.historyList?.addEventListener("click", handleHistoryListClick);
   elements.installAppButton?.addEventListener("click", handleInstallAppClick);
   elements.sheetToggle.addEventListener("click", toggleSheet);
+  elements.saveReadingButton?.addEventListener("click", () => handleReadingUtilityAction("save"));
+  elements.copyReadingButton?.addEventListener("click", () => handleReadingUtilityAction("copy"));
+  elements.shareReadingButton?.addEventListener("click", () => handleReadingUtilityAction("share"));
   elements.redrawButton.addEventListener("click", redrawReading);
   elements.redrawTopButton.addEventListener("click", redrawReading);
   elements.generateMirrorButton?.addEventListener("click", revealReading);
@@ -788,6 +805,7 @@ function isAppInstalled() {
 
 function updateInstallCta() {
   if (!elements.installAppButton) {
+    updateHistoryCta();
     return;
   }
 
@@ -795,6 +813,15 @@ function updateInstallCta() {
     appState.currentView === "setup" && appState.currentStage === "mode" && !appState.isInstalled;
 
   elements.installAppButton.hidden = !shouldShow;
+  updateHistoryCta();
+}
+
+function updateHistoryCta() {
+  if (!elements.historyButton) {
+    return;
+  }
+
+  elements.historyButton.hidden = !(appState.currentView === "setup" && appState.currentStage === "mode");
 }
 
 async function handleInstallAppClick() {
@@ -904,6 +931,112 @@ function getInstallModal() {
   }
 
   return bootstrap.Modal.getOrCreateInstance(elements.installModal);
+}
+
+function getHistoryModal() {
+  if (!elements.historyModal || typeof bootstrap === "undefined") {
+    return null;
+  }
+
+  return bootstrap.Modal.getOrCreateInstance(elements.historyModal);
+}
+
+function openHistoryModal() {
+  renderHistoryList();
+  getHistoryModal()?.show();
+}
+
+function getStoredReadings() {
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(READING_HISTORY_KEY) || "[]");
+    return Array.isArray(parsed) ? parsed.filter((item) => item && typeof item === "object") : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function storeReadings(readings) {
+  try {
+    window.localStorage.setItem(
+      READING_HISTORY_KEY,
+      JSON.stringify(readings.slice(0, MAX_READING_HISTORY_ITEMS))
+    );
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+function clearReadingHistory() {
+  storeReadings([]);
+  renderHistoryList();
+}
+
+function renderHistoryList() {
+  if (!elements.historyList) {
+    return;
+  }
+
+  const readings = getStoredReadings();
+
+  if (!readings.length) {
+    elements.historyList.innerHTML = `
+      <div class="history-empty">
+        <i class="bi bi-bookmark" aria-hidden="true"></i>
+        <p class="mb-0">No saved readings yet. Save one from a result screen when something feels worth keeping.</p>
+      </div>
+    `;
+
+    if (elements.clearHistoryButton) {
+      elements.clearHistoryButton.disabled = true;
+    }
+    return;
+  }
+
+  if (elements.clearHistoryButton) {
+    elements.clearHistoryButton.disabled = false;
+  }
+
+  elements.historyList.innerHTML = readings
+    .map(
+      (reading) => `
+        <article class="history-item">
+          <div>
+            <div class="history-item__meta">${escapeHtml(reading.meta || "")}</div>
+            <h3 class="history-item__title">${escapeHtml(reading.title || "Saved reading")}</h3>
+            <p class="history-item__preview mb-0">${escapeHtml(reading.preview || "")}</p>
+          </div>
+          <button
+            class="history-item__copy"
+            type="button"
+            data-history-copy="${escapeHtml(reading.id || "")}"
+            aria-label="Copy saved reading"
+          >
+            <i class="bi bi-copy" aria-hidden="true"></i>
+          </button>
+        </article>
+      `
+    )
+    .join("");
+}
+
+function handleHistoryListClick(event) {
+  const copyButton = event.target.closest("[data-history-copy]");
+
+  if (!copyButton) {
+    return;
+  }
+
+  const reading = getStoredReadings().find((item) => item.id === copyButton.dataset.historyCopy);
+
+  if (!reading?.text) {
+    return;
+  }
+
+  copyTextToClipboard(reading.text).then((didCopy) => {
+    copyButton.classList.toggle("is-confirmed", didCopy);
+    window.setTimeout(() => copyButton.classList.remove("is-confirmed"), 1200);
+  });
 }
 
 function isIOSDevice() {
@@ -1134,7 +1267,7 @@ function syncQuestionControls() {
     return;
   }
 
-  const hasQuestion = Boolean((elements.aiQuestionInput.value || "").trim());
+  const hasQuestion = (elements.aiQuestionInput.value || "").trim().split(/\s+/).filter(Boolean).length >= 1;
 
   elements.aiQuestionInput.disabled = false;
   elements.askAiButton.disabled = !hasQuestion;
@@ -1825,6 +1958,7 @@ function renderReadingView() {
       : isArchetype
       ? "Generate again"
       : "Draw again";
+  elements.backButton.textContent = "Close chamber";
 
   renderReadingBoard(config, reading.draws, reading.mode);
 
@@ -1847,6 +1981,7 @@ function renderReadingView() {
       `;
 
   renderAiInterpretation();
+  updateReadingUtilityControls(reading);
 }
 
 function renderAiInterpretation() {
@@ -1872,7 +2007,10 @@ function renderAiInterpretation() {
 
   if (ai.status === "error") {
     elements.aiInterpretationBody.className = "ai-interpretation__body ai-interpretation__body--error";
-    elements.aiInterpretationBody.innerHTML = `<p>${ai.error}</p>`;
+    elements.aiInterpretationBody.innerHTML = `
+      <p><strong>The original reading is preserved below.</strong></p>
+      <p>${escapeHtml(ai.error)}</p>
+    `;
     return;
   }
 
@@ -1893,6 +2031,7 @@ function renderReadingBoard(config, draws, mode) {
     elements.readingBoard.className = "reading-board reading-board--dice-stage";
     elements.readingBoard.innerHTML = renderDiceBoard(appState.currentReading);
     elements.readingBoard.querySelector("#diceRollButton")?.addEventListener("click", redrawReading);
+    bindInlineReadingActions(elements.readingBoard);
   } else if (mode === "oracle") {
     elements.readingBoard.className = "reading-board reading-board--oracle-stage";
     elements.readingBoard.innerHTML = renderOracleBoard(config, draws);
@@ -1917,23 +2056,286 @@ function renderReadingBoard(config, draws, mode) {
   });
 }
 
+function updateReadingUtilityControls(reading = appState.currentReading) {
+  const isLoading = reading?.ai?.status === "loading";
+  const buttons = [
+    elements.saveReadingButton,
+    elements.copyReadingButton,
+    elements.shareReadingButton
+  ].filter(Boolean);
+
+  buttons.forEach((button) => {
+    button.disabled = !reading || isLoading;
+  });
+
+  if (elements.saveReadingButton) {
+    elements.saveReadingButton.innerHTML = reading?.savedHistoryId
+      ? '<i class="bi bi-bookmark-check" aria-hidden="true"></i> Saved'
+      : '<i class="bi bi-bookmark" aria-hidden="true"></i> Save';
+  }
+}
+
+function bindInlineReadingActions(scope) {
+  scope.querySelectorAll("[data-reading-action]").forEach((button) => {
+    button.addEventListener("click", () => handleReadingUtilityAction(button.dataset.readingAction));
+  });
+}
+
+async function handleReadingUtilityAction(action) {
+  if (!appState.currentReading || appState.currentReading.ai?.status === "loading") {
+    showReadingActionStatus("The reading is still preparing.");
+    return;
+  }
+
+  if (action === "save") {
+    const saved = saveCurrentReading();
+    showReadingActionStatus(saved ? "Saved to recent readings." : "This browser could not save the reading.", saved ? "success" : "error");
+    updateReadingUtilityControls();
+    return;
+  }
+
+  if (action === "copy") {
+    const didCopy = await copyTextToClipboard(formatReadingForSharing(appState.currentReading));
+    showReadingActionStatus(didCopy ? "Reading copied." : "Copy was not available in this browser.", didCopy ? "success" : "error");
+    return;
+  }
+
+  if (action === "share") {
+    const shared = await shareCurrentReading();
+    if (shared === "cancelled") {
+      return;
+    }
+    showReadingActionStatus(
+      shared === "copied"
+        ? "Sharing was not available, so the reading was copied instead."
+        : shared
+          ? "Share sheet opened."
+          : "Sharing was not available in this browser.",
+      shared ? "success" : "error"
+    );
+  }
+}
+
+function saveCurrentReading() {
+  const reading = appState.currentReading;
+
+  if (!reading) {
+    return false;
+  }
+
+  const readings = getStoredReadings();
+  const snapshot = createHistorySnapshot(reading);
+  const existingIndex = readings.findIndex((item) => item.id === snapshot.id);
+
+  if (existingIndex >= 0) {
+    readings.splice(existingIndex, 1);
+  }
+
+  const didStore = storeReadings([snapshot, ...readings]);
+
+  if (didStore) {
+    reading.savedHistoryId = snapshot.id;
+  }
+
+  return didStore;
+}
+
+function createHistorySnapshot(reading) {
+  const config = getCatalogForMode(reading.mode).find((item) => item.id === reading.configId);
+  const id = reading.savedHistoryId || `${reading.mode}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const date = new Date();
+  const modeLabel = getReadingModeLabel(reading.mode);
+  const title = reading.mode === "dice"
+    ? `${modeLabel}: ${reading.result.primary}`
+    : `${modeLabel}: ${config?.name || "Reading"}`;
+  const preview = getReadingPreview(reading, config);
+
+  return {
+    id,
+    mode: reading.mode,
+    title,
+    preview,
+    meta: `${date.toLocaleDateString([], { month: "short", day: "numeric" })} · ${modeLabel}`,
+    savedAt: date.toISOString(),
+    text: formatReadingForSharing(reading)
+  };
+}
+
+function getReadingPreview(reading, config) {
+  if (reading.ai?.status === "success" && reading.ai.interpretation) {
+    return splitIntoParagraphs(reading.ai.interpretation)[0] || "Personalised interpretation saved.";
+  }
+
+  if (reading.mode === "dice") {
+    return `Number ${reading.result.total}: ${reading.result.primary}, ${reading.result.secondary}.`;
+  }
+
+  if (reading.mode === "oracle") {
+    return reading.draws.map((draw) => draw.title).join(", ");
+  }
+
+  if (reading.mode === "archetype") {
+    return reading.draws.map((draw, index) => `${config?.positions?.[index]?.title || index + 1}: ${draw.name}`).join("; ");
+  }
+
+  return reading.draws.map((draw, index) => `${config?.positions?.[index]?.title || index + 1}: ${draw.name}`).join("; ");
+}
+
+function getReadingModeLabel(mode) {
+  if (mode === "oracle") {
+    return "Oracle";
+  }
+
+  if (mode === "archetype") {
+    return "Archetype Mirror";
+  }
+
+  if (mode === "dice") {
+    return "Cleromancy";
+  }
+
+  return "Tarot";
+}
+
+function formatReadingForSharing(reading) {
+  const config = getCatalogForMode(reading.mode).find((item) => item.id === reading.configId);
+  const lines = [
+    "Divine Chamber",
+    `${getReadingModeLabel(reading.mode)}${config?.name ? ` · ${config.name}` : ""}`
+  ];
+
+  if (reading.ai?.question) {
+    lines.push("", `Question: ${reading.ai.question}`);
+  }
+
+  if (reading.ai?.status === "success" && reading.ai.interpretation) {
+    lines.push("", "Personalised Interpretation", reading.ai.interpretation);
+  } else if (reading.ai?.status === "error") {
+    lines.push("", "Personalised Interpretation", "The personalised reading could not be completed, so the original reading is preserved.");
+  }
+
+  lines.push("", "Original Reading", ...formatStaticReadingLines(reading, config));
+
+  return lines.filter((line, index, source) => line || source[index - 1]).join("\n");
+}
+
+function formatStaticReadingLines(reading, config) {
+  if (reading.mode === "dice") {
+    return [
+      `Number: ${reading.result.total}`,
+      `Outcome: ${reading.result.primary}`,
+      `Meaning: ${reading.result.secondary}`,
+      `Cast: ${reading.result.castLabel}`
+    ];
+  }
+
+  if (reading.mode === "oracle") {
+    return reading.draws.map((draw, index) => {
+      const position = config?.positions?.[index]?.title || `Page ${index + 1}`;
+      return `${position}: ${draw.title}. ${draw.phrase}`;
+    });
+  }
+
+  if (reading.mode === "archetype") {
+    return reading.draws.map((draw, index) => {
+      const position = config?.positions?.[index]?.title || `Position ${index + 1}`;
+      return `${position}: ${draw.name}. ${draw.coreMeaning} Prompt: ${buildArchetypeReflectionPrompt(draw, config?.positions?.[index] || {})}`;
+    });
+  }
+
+  return reading.draws.map((draw, index) => {
+    const position = config?.positions?.[index]?.title || `Card ${index + 1}`;
+    const orientation = draw.isReversed ? "reversed" : "upright";
+    return `${position}: ${draw.name} (${orientation}). ${buildCardInterpretation(draw, config?.positions?.[index] || {})}`;
+  });
+}
+
+async function copyTextToClipboard(text) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch (error) {
+    // Fall through to the textarea fallback below.
+  }
+
+  try {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.top = "-1000px";
+    document.body.appendChild(textarea);
+    textarea.select();
+    const didCopy = document.execCommand("copy");
+    textarea.remove();
+    return didCopy;
+  } catch (error) {
+    return false;
+  }
+}
+
+async function shareCurrentReading() {
+  const reading = appState.currentReading;
+
+  if (!reading) {
+    return false;
+  }
+
+  const text = formatReadingForSharing(reading);
+  const title = `Divine Chamber ${getReadingModeLabel(reading.mode)}`;
+
+  if (navigator.share) {
+    try {
+      await navigator.share({ title, text });
+      return true;
+    } catch (error) {
+      return error?.name === "AbortError" ? "cancelled" : false;
+    }
+  }
+
+  return (await copyTextToClipboard(text)) ? "copied" : false;
+}
+
+function showReadingActionStatus(message, tone = "neutral") {
+  const statusElement =
+    appState.currentReading?.mode === "dice"
+      ? document.querySelector("#diceActionStatus") || elements.readingActionStatus
+      : elements.readingActionStatus;
+
+  if (!statusElement) {
+    return;
+  }
+
+  if (readingActionStatusTimer) {
+    window.clearTimeout(readingActionStatusTimer);
+  }
+
+  statusElement.hidden = false;
+  statusElement.textContent = message;
+  statusElement.classList.toggle("is-error", tone === "error");
+  statusElement.classList.toggle("is-success", tone === "success");
+
+  readingActionStatusTimer = window.setTimeout(() => {
+    statusElement.hidden = true;
+    statusElement.textContent = "";
+    statusElement.classList.remove("is-error", "is-success");
+  }, 2600);
+}
+
 function renderAiLoadingBoard(reading) {
   const elapsedSeconds = getAiLoadingProgress(reading);
-  const noun =
-    reading.mode === "oracle"
-      ? "pages"
-      : reading.mode === "archetype"
-        ? "archetypes"
-        : "cards";
+  const loadingCopy = getAiLoadingCopy(reading.mode);
 
   return `
     <div class="ai-loading-board" aria-live="polite" style="--ai-loading-elapsed: ${elapsedSeconds};">
       <div class="ai-loading-board__pulse" aria-hidden="true"></div>
       <div class="ai-loading-board__copy">
         <div class="view-kicker">Personalised interpretation</div>
-        <h2 class="surface-title">Reading the ${noun}</h2>
+        <h2 class="surface-title">${loadingCopy.title}</h2>
         <p class="reading-sheet__summary mb-0">
-          Your divination is already prepared. Divine Chamber is now writing the answer to your question.
+          ${loadingCopy.body}
         </p>
         <div class="ai-loading-board__progress" aria-hidden="true">
           <span class="ai-loading-board__progress-fill"></span>
@@ -1944,6 +2346,27 @@ function renderAiLoadingBoard(reading) {
       </div>
     </div>
   `;
+}
+
+function getAiLoadingCopy(mode) {
+  if (mode === "oracle") {
+    return {
+      title: "Reading the pages",
+      body: "Your pages are already prepared. Divine Chamber is now shaping them around your question."
+    };
+  }
+
+  if (mode === "archetype") {
+    return {
+      title: "Reading the mirror",
+      body: "Your archetypes are already prepared. Divine Chamber is now tracing the pattern behind your question."
+    };
+  }
+
+  return {
+    title: "Reading the cards",
+    body: "Your cards are already prepared. Divine Chamber is now writing the answer to your question."
+  };
 }
 
 function renderDiceBoard(reading) {
@@ -1978,6 +2401,21 @@ function renderDiceBoard(reading) {
         <button id="diceRollButton" class="btn btn-ios btn-ios--secondary" type="button">
           Cast again
         </button>
+        <div class="dice-cast__utility-actions" aria-label="Cleromancy actions">
+          <button class="reading-utility-action" type="button" data-reading-action="save">
+            <i class="bi bi-bookmark" aria-hidden="true"></i>
+            Save
+          </button>
+          <button class="reading-utility-action" type="button" data-reading-action="copy">
+            <i class="bi bi-copy" aria-hidden="true"></i>
+            Copy
+          </button>
+          <button class="reading-utility-action" type="button" data-reading-action="share">
+            <i class="bi bi-share" aria-hidden="true"></i>
+            Share
+          </button>
+        </div>
+        <p id="diceActionStatus" class="reading-action-status mb-0" role="status" hidden></p>
       </div>
     </div>
   `;
@@ -2439,16 +2877,20 @@ function getAiFallbackMessage(error) {
   const message = String(error?.message || "");
   const status = Number(error?.status || 0);
 
+  if (status === 429 || /too many/i.test(message)) {
+    return "The personalised reading is resting for a moment because too many requests were made. Your original reading is still complete and ready below.";
+  }
+
   if (
     status === 404 ||
     status === 503 ||
     /not configured/i.test(message) ||
     /workers ai/i.test(message)
   ) {
-    return "The personalised reading is not connected yet, but the original divination is ready below.";
+    return "The personalised reading is not connected yet. Your original reading is still complete and ready below.";
   }
 
-  return "The personalised reading could not be completed right now, but the original divination is ready below.";
+  return "The personalised reading could not be completed right now. Your original reading is still complete and ready below.";
 }
 
 function buildAiInterpretationPayload(reading) {
@@ -3036,10 +3478,15 @@ function clearReadingSurface() {
     elements.aiInterpretationBody.className = "ai-interpretation__body";
     elements.aiInterpretationBody.innerHTML = "";
   }
+  if (elements.readingActionStatus) {
+    elements.readingActionStatus.hidden = true;
+    elements.readingActionStatus.textContent = "";
+  }
   if (elements.aiQuestionInput) {
     elements.aiQuestionInput.value = "";
     elements.aiQuestionInput.disabled = false;
   }
+  updateReadingUtilityControls(null);
   setQuestionStatus("");
   syncQuestionControls();
 }

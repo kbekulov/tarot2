@@ -3,8 +3,22 @@ const JSON_HEADERS = {
   "content-type": "application/json; charset=UTF-8"
 };
 const ALLOWED_TYPES = new Set(["tarot", "mirror", "pages"]);
+const ALLOWED_ORIGINS = new Set([
+  "https://tarot.bekulov.com",
+  "https://tarot2.bekulov.com",
+  "https://chamber.quest"
+]);
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
+const RATE_LIMIT_MAX_REQUESTS = 8;
+const rateLimitBuckets = new Map();
 
 export function handleInterpretOptions(context) {
+  const originError = rejectDisallowedOrigin(context);
+
+  if (originError) {
+    return originError;
+  }
+
   return new Response(null, {
     status: 204,
     headers: buildResponseHeaders(context)
@@ -13,6 +27,17 @@ export function handleInterpretOptions(context) {
 
 export async function handleInterpretPost(context) {
   const { request, env } = context;
+  const originError = rejectDisallowedOrigin(context);
+
+  if (originError) {
+    return originError;
+  }
+
+  const rateLimitError = checkRateLimit(context);
+
+  if (rateLimitError) {
+    return rateLimitError;
+  }
 
   if (!env?.AI || typeof env.AI.run !== "function") {
     return json(
@@ -72,6 +97,66 @@ export async function handleInterpretPost(context) {
     });
     return json({ error: "The personalised interpretation could not be generated right now." }, 502, context);
   }
+}
+
+function rejectDisallowedOrigin(context) {
+  const origin = context?.request?.headers?.get("Origin");
+
+  if (!origin || ALLOWED_ORIGINS.has(origin)) {
+    return null;
+  }
+
+  return new Response(JSON.stringify({ error: "Origin not allowed." }), {
+    status: 403,
+    headers: {
+      ...JSON_HEADERS,
+      Vary: "Origin"
+    }
+  });
+}
+
+function checkRateLimit(context) {
+  const request = context?.request;
+  const now = Date.now();
+  const origin = request?.headers?.get("Origin") || "no-origin";
+  const ip =
+    request?.headers?.get("CF-Connecting-IP") ||
+    request?.headers?.get("x-forwarded-for") ||
+    "unknown";
+  const key = `${origin}:${ip}`;
+  const existing = rateLimitBuckets.get(key);
+  const bucket =
+    existing && now - existing.startedAt < RATE_LIMIT_WINDOW_MS
+      ? existing
+      : { startedAt: now, count: 0 };
+
+  bucket.count += 1;
+  rateLimitBuckets.set(key, bucket);
+  pruneRateLimitBuckets(now);
+
+  if (bucket.count <= RATE_LIMIT_MAX_REQUESTS) {
+    return null;
+  }
+
+  return json(
+    {
+      error: "Too many personalised readings were requested in a short time. Please wait a little and try again."
+    },
+    429,
+    context
+  );
+}
+
+function pruneRateLimitBuckets(now) {
+  if (rateLimitBuckets.size < 400) {
+    return;
+  }
+
+  rateLimitBuckets.forEach((bucket, key) => {
+    if (now - bucket.startedAt >= RATE_LIMIT_WINDOW_MS) {
+      rateLimitBuckets.delete(key);
+    }
+  });
 }
 
 function buildAiRunPayload({ type, question, result }) {
@@ -299,14 +384,12 @@ function json(payload, status = 200, context) {
 }
 
 function buildResponseHeaders(context) {
-  const allowedOrigin =
-    typeof context?.env?.ALLOWED_ORIGIN === "string" && context.env.ALLOWED_ORIGIN.trim()
-      ? context.env.ALLOWED_ORIGIN.trim()
-      : "*";
+  const origin = context?.request?.headers?.get("Origin");
 
   return {
-    "access-control-allow-origin": allowedOrigin,
+    "access-control-allow-origin": origin && ALLOWED_ORIGINS.has(origin) ? origin : "*",
     "access-control-allow-methods": "POST, OPTIONS",
-    "access-control-allow-headers": "content-type"
+    "access-control-allow-headers": "content-type",
+    Vary: "Origin"
   };
 }

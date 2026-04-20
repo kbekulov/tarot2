@@ -1,13 +1,19 @@
 import { handleInterpretOptions, handleInterpretPost } from "../../../cloudflare/divination-ai-handler.js";
 
-function corsHeaders(env) {
+const ALLOWED_ORIGINS = new Set([
+  "https://tarot.bekulov.com",
+  "https://tarot2.bekulov.com",
+  "https://chamber.quest"
+]);
+
+function corsHeaders(request) {
+  const origin = request.headers.get("Origin");
+
   return {
-    "access-control-allow-origin":
-      typeof env?.ALLOWED_ORIGIN === "string" && env.ALLOWED_ORIGIN.trim()
-        ? env.ALLOWED_ORIGIN.trim()
-        : "*",
+    "access-control-allow-origin": origin && ALLOWED_ORIGINS.has(origin) ? origin : "*",
     "access-control-allow-methods": "POST, OPTIONS",
-    "access-control-allow-headers": "content-type"
+    "access-control-allow-headers": "content-type",
+    Vary: "Origin"
   };
 }
 
@@ -28,7 +34,7 @@ export default {
         status: 405,
         headers: {
           "content-type": "application/json; charset=UTF-8",
-          ...corsHeaders(env)
+          ...corsHeaders(request)
         }
       });
     }
@@ -42,7 +48,7 @@ export default {
         status: 200,
         headers: {
           "content-type": "application/json; charset=UTF-8",
-          ...corsHeaders(env)
+          ...corsHeaders(request)
         }
       }
     );

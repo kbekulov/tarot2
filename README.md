@@ -20,6 +20,9 @@ Divine Chamber is currently a static, production-minded web app with:
 - local tarot artwork generation
 - predefined Oracle and Archetype content with no AI dependency
 - a Cleromancy mode with random one-die or two-dice casting and a 12-step outcome scale
+- optional local reading history saved only in the user's browser
+- save, copy, and share actions on completed readings
+- a privacy note before personalised readings are requested
 - optional personalised interpretation support for Tarot, Oracle, and Archetype Mirror through a separate Cloudflare Worker AI endpoint
 - install / Add to Home Screen support through a web manifest and service worker
 
@@ -51,6 +54,18 @@ Divine Chamber is currently a static, production-minded web app with:
 - [site-config.js](site-config.js): runtime config for the external AI endpoint used on GitHub Pages
 - [cloudflare/divination-ai-handler.js](cloudflare/divination-ai-handler.js): shared Workers AI request handler
 - [workers/divine-chamber-ai](workers/divine-chamber-ai): separate Cloudflare Worker for personalised interpretations
+
+## Local History And Sharing
+
+Users can manually save completed readings into browser `localStorage`. Saved readings stay on that device only and can be cleared from the `Recent readings` modal on the landing screen.
+
+Completed readings also include lightweight actions for:
+
+- saving the reading locally
+- copying a text version
+- opening the native share sheet when supported
+
+Personal questions are only sent to the AI endpoint when the user presses `Submit`. Choosing `Skip` keeps the reading flow local and shows the static result.
 
 ## Run Locally
 
@@ -96,6 +111,12 @@ That means:
 - but it does **not** automatically redeploy the live Worker code in Cloudflare
 
 If the Worker logic changes, the Cloudflare dashboard code must also be updated and redeployed unless the Worker is later moved to a full Wrangler-based deploy flow.
+
+The repo Worker source currently includes:
+
+- explicit allowed origins for `tarot.bekulov.com`, `tarot2.bekulov.com`, and `chamber.quest`
+- a simple in-memory per-origin/IP rate limit for personalised interpretation requests
+- prompt and cleanup safeguards that avoid em dashes in AI responses
 
 ### Worker Files In This Repo
 

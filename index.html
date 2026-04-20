@@ -152,10 +152,16 @@
                         <span class="mystery-card__prompt">Tap to begin</span>
                       </span>
                     </div>
-                    <button id="installAppButton" class="install-app-cta" type="button" hidden>
-                      <i class="bi bi-arrow-down-circle" aria-hidden="true"></i>
-                      <span>Download the App</span>
-                    </button>
+                    <div class="home-utility-actions" aria-label="App utilities">
+                      <button id="historyButton" class="home-utility-link" type="button">
+                        <i class="bi bi-clock-history" aria-hidden="true"></i>
+                        <span>Recent readings</span>
+                      </button>
+                      <button id="installAppButton" class="install-app-cta home-utility-link" type="button" hidden>
+                        <i class="bi bi-arrow-down-circle" aria-hidden="true"></i>
+                        <span>Download the App</span>
+                      </button>
+                    </div>
                   </div>
 
                   <div class="stage-panel">
@@ -223,6 +229,10 @@
                             placeholder="What should I understand about this reading?"
                           ></textarea>
                         </label>
+
+                        <p class="question-gate__privacy mb-0">
+                          Submit sends your question for a personalised reading. Skip keeps it local.
+                        </p>
 
                         <p id="questionPanelStatus" class="question-gate__status mb-0" hidden></p>
 
@@ -317,6 +327,21 @@
                           New ritual
                         </button>
                       </div>
+                      <div class="reading-sheet__utility-actions" aria-label="Reading actions">
+                        <button id="saveReadingButton" class="reading-utility-action" type="button">
+                          <i class="bi bi-bookmark" aria-hidden="true"></i>
+                          Save
+                        </button>
+                        <button id="copyReadingButton" class="reading-utility-action" type="button">
+                          <i class="bi bi-copy" aria-hidden="true"></i>
+                          Copy
+                        </button>
+                        <button id="shareReadingButton" class="reading-utility-action" type="button">
+                          <i class="bi bi-share" aria-hidden="true"></i>
+                          Share
+                        </button>
+                      </div>
+                      <p id="readingActionStatus" class="reading-action-status mb-0" role="status" hidden></p>
 
                       <div id="cardsAccordion" class="accordion reading-accordion"></div>
 
@@ -346,6 +371,35 @@
             <p id="installModalBody" class="install-modal__text mb-0"></p>
             <ol id="installModalSteps" class="install-modal__steps mb-0"></ol>
             <div class="install-modal__actions">
+              <button type="button" class="btn btn-ios btn-ios--secondary" data-bs-dismiss="modal">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="modal fade history-modal"
+      id="historyModal"
+      tabindex="-1"
+      aria-labelledby="historyModalTitle"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content install-modal__content history-modal__content">
+          <div class="modal-body install-modal__body history-modal__body">
+            <div class="install-modal__kicker">Recent readings</div>
+            <h2 id="historyModalTitle" class="install-modal__title">Saved locally</h2>
+            <p class="install-modal__text mb-0">
+              Saved readings stay on this device and can be cleared anytime.
+            </p>
+            <div id="historyList" class="history-list" aria-live="polite"></div>
+            <div class="install-modal__actions history-modal__actions">
+              <button id="clearHistoryButton" type="button" class="btn btn-ios btn-ios--ghost">
+                Clear
+              </button>
               <button type="button" class="btn btn-ios btn-ios--secondary" data-bs-dismiss="modal">
                 Close
               </button>
